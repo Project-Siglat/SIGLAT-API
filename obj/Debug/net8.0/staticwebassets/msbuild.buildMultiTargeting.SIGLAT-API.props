@@ -1,0 +1,3 @@
+﻿<Project>
+  <Import Project="../build/SIGLAT-API.props" />
+</Project>
