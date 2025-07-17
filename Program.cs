@@ -120,11 +120,11 @@ builder.Services.AddAuthentication(options =>
 var app = builder.Build();
 app.UseCors(Origin);
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+// if (app.Environment.IsDevelopment())
+// {
+app.UseSwagger();
+app.UseSwaggerUI();
+// }
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
