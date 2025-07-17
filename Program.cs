@@ -32,7 +32,7 @@ builder.Services.AddCors(options =>
     options.AddPolicy(name: Origin,
                       policy =>
                       {
-                          policy.WithOrigins("http://localhost:5050")
+                          policy.WithOrigins("http://localhost:5050", "https://siglatdev.craftmatrix.org")
                                 .AllowAnyHeader()
                                 .AllowAnyMethod()
                                 .AllowCredentials();
@@ -57,18 +57,6 @@ builder.Services.AddVersionedApiExplorer(options =>
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
-    // c.SwaggerDoc("v1", new OpenApiInfo
-    // {
-    //     Title = "Craftmatrix SaveTrack API",
-    //     Version = "v1",
-    //     Description = "API Version 1.0"
-    // });
-    // c.SwaggerDoc("v2", new OpenApiInfo
-    // {
-    //     Title = "Craftmatrix SaveTrack API",
-    //     Version = "v2",
-    //     Description = "API Version 2.0"
-    // });
     c.SwaggerDoc("v1", new OpenApiInfo
     {
         Title = "Siglat API",
