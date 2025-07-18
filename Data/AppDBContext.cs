@@ -17,6 +17,7 @@ namespace Craftmatrix.org.Data
         public DbSet<VerificationDto> Verifications { get; set; }
         public DbSet<AlertDto> Alerts { get; set; }
         public DbSet<UserXYZDto> UserXYZ { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<RoleDto>()
@@ -49,22 +50,6 @@ namespace Craftmatrix.org.Data
                 .HasForeignKey(a => a.Responder)
                 .HasPrincipalKey(i => i.Id)
                 .OnDelete(DeleteBehavior.Restrict);
-
-            // modelBuilder.Entity<IdentityDto>()
-            //                 .HasOne<RoleDto>()
-            //                 .WithMany()
-            //                 .HasForeignKey(i => i.Role)
-            //                 .HasPrincipalKey(r => r.Name)
-            //                 .OnDelete(DeleteBehavior.Restrict);
-
-
-            // sample relation
-            // modelBuilder.Entity<WishListDto>()
-            //     .HasOne<WishListParentDto>()
-            //    localhost .WithMany()
-            //     .HasForeignKey(t => t.ParentId)
-            //     .HasPrincipalKey(u => u.Id)
-            //     .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

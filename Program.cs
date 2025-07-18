@@ -32,7 +32,7 @@ builder.Services.AddCors(options =>
     options.AddPolicy(name: Origin,
                       policy =>
                       {
-                          policy.WithOrigins("http://localhost:5050", "https://siglatdev.craftmatrix.org")
+                          policy.WithOrigins("http://localhost:5050", "https://siglatdev.craftmatrix.org", "https://siglat.craftmatrix.org")
                                 .AllowAnyHeader()
                                 .AllowAnyMethod()
                                 .AllowCredentials();
