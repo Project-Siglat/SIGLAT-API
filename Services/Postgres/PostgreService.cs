@@ -183,7 +183,7 @@ public class PostgreService : IPostgreService
         {
             using (var connection = await CreateConnectionAsync())
             {
-                string query = $"SELECT * FROM \"{tableName}\" WHERE \"Id\" = @Id";
+                string query = $"SELECT * FROM \"{tableName}\" WHERE \"Id\" = @Id::uuid";
                 _logger.LogDebug($"Executing query: {query} with Id = {id}");
 
                 var result = await connection.QuerySingleOrDefaultAsync<T>(query, new { Id = id });
