@@ -54,6 +54,8 @@ namespace SIGLATAPI.Controllers.WhoAmI
                     request.Address,
                     request.Role,
                     request.DateOfBirth,
+                    request.Gender,
+                    request.PhoneNumber,
                     request.Email,
                     request.HashPass,
                     request.CreatedAt,

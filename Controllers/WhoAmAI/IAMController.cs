@@ -38,5 +38,84 @@ namespace SIGLATAPI.Controllers.WhoAmI
             return Ok(whoami);
             // return Ok(tokenData.ToString());
         }
+
+        [HttpPost]
+        public async Task<IActionResult> UpdateIAM([FromBody] IdentityDto identityDto)
+        {
+            // var whos = await _db.GetDataAsync<IdentityDto>("Identity");
+            var whoami = await _db.PostDataAsync<IdentityDto>("Identity", identityDto, identityDto.Id);
+            return Ok(whoami);
+            // return Ok(tokenData.ToString());
+        }
+
+        [HttpPost("change-pass")]
+        public async Task<IActionResult> ChangePassword(string pass)
+        {
+            var token = HttpContext.Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+            var handler = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler();
+            var jsonToken = handler.ReadToken(token) as System.IdentityModel.Tokens.Jwt.JwtSecurityToken;
+            var tokenData = jsonToken.Payload.Jti;
+
+            var identity = await _db.GetSingleDataAsync<IdentityDto>("Identity", tokenData.ToString());
+            identity.HashPass = PasswordService.HashPassword(pass);
+            await _db.PostDataAsync<IdentityDto>("Identity", identity, identity.Id);
+            return Ok(identity);
+        }
+
+        [HttpPost("verify")]
+        public async Task<IActionResult> Verify([FromForm] IFormFile image)
+        {
+            var token = HttpContext.Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+            var handler = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler();
+            var jsonToken = handler.ReadToken(token) as System.IdentityModel.Tokens.Jwt.JwtSecurityToken;
+            var tokenData = jsonToken.Payload.Jti;
+
+            using (var memoryStream = new MemoryStream())
+            {
+                await image.CopyToAsync(memoryStream);
+                var imageBytes = memoryStream.ToArray();
+                var IMG = Convert.ToBase64String(imageBytes);
+
+                var verification = new VerificationDto
+                {
+                    Id = Guid.Parse(tokenData),
+                    B64Image = IMG,
+                    Status = "false",
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                };
+
+                await _db.PostDataAsync<VerificationDto>("Verifications", verification, verification.Id);
+                return Ok("Verify?");
+            }
+        }
+
+
+        [HttpGet("verified")]
+        public async Task<IActionResult> IsVerified()
+        {
+            var token = HttpContext.Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+            var handler = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler();
+            var jsonToken = handler.ReadToken(token) as System.IdentityModel.Tokens.Jwt.JwtSecurityToken;
+            var tokenData = jsonToken.Payload.Jti;
+
+            var verified = await _db.GetSingleDataAsync<VerificationDto>("Verifications", tokenData.ToString());
+            if (verified != null)
+            {
+                if (verified.VerificationType == "true")
+                {
+                    return Ok(true);
+
+                }
+                else
+                {
+                    return Ok(false);
+                }
+            }
+            else
+            {
+                return Ok(false);
+            }
+        }
     }
 }

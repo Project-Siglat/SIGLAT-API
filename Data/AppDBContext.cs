@@ -33,7 +33,7 @@ namespace Craftmatrix.org.Data
             modelBuilder.Entity<VerificationDto>()
                 .HasOne<IdentityDto>()
                 .WithMany()
-                .HasForeignKey(v => v.UID)
+                .HasForeignKey(v => v.Id)
                 .HasPrincipalKey(i => i.Id)
                 .OnDelete(DeleteBehavior.Restrict);
 
