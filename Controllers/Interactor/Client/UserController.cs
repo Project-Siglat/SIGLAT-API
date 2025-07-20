@@ -19,7 +19,7 @@ namespace SIGLAT.API.Controllers.Client
             _httpClientFactory = httpClientFactory;
 
         }
-        [HttpGet("coordinates")]
+        [HttpPost("coordinates")]
         public async Task<IActionResult> Get([FromBody] UserXYZDto user)
         {
             await _db.PostDataAsync<UserXYZDto>("UserXYZ", user, user.Id);
