@@ -63,7 +63,7 @@ namespace SIGLATAPI.Controllers.WhoAmI
         }
 
         [HttpPost("verify")]
-        public async Task<IActionResult> Verify([FromForm] IFormFile image)
+        public async Task<IActionResult> Verify(IFormFile image, string DocuType)
         {
             var token = HttpContext.Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
             var handler = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler();
@@ -80,7 +80,8 @@ namespace SIGLATAPI.Controllers.WhoAmI
                 {
                     Id = Guid.Parse(tokenData),
                     B64Image = IMG,
-                    Status = "false",
+                    Status = "pending",
+                    VerificationType = DocuType,
                     CreatedAt = DateTime.UtcNow,
                     UpdatedAt = DateTime.UtcNow
                 };
@@ -100,21 +101,26 @@ namespace SIGLATAPI.Controllers.WhoAmI
             var tokenData = jsonToken.Payload.Jti;
 
             var verified = await _db.GetSingleDataAsync<VerificationDto>("Verifications", tokenData.ToString());
+            // return Ok(verified.Status);
             if (verified != null)
             {
-                if (verified.VerificationType == "true")
+                if (verified.Status == "accepted")
                 {
-                    return Ok(true);
+                    return Ok("accepted");
 
+                }
+                else if (verified.Status == "pending")
+                {
+                    return Ok("pending");
                 }
                 else
                 {
-                    return Ok(false);
+                    return Ok("rejected");
                 }
             }
             else
             {
-                return Ok(false);
+                return Ok("none");
             }
         }
     }

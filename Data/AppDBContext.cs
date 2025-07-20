@@ -20,8 +20,8 @@ namespace Craftmatrix.org.Data
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            modelBuilder.Entity<RoleDto>()
-                            .HasKey(r => r.Name);
+            // modelBuilder.Entity<RoleDto>()
+            //                 .HasKey(r => r.Name);
 
             modelBuilder.Entity<CoordinatesDto>()
                             .HasOne<IdentityDto>()
