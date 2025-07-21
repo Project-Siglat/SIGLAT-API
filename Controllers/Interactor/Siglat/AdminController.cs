@@ -26,6 +26,14 @@ namespace SIGLATAPI.Controllers.WhoAmI
 
         }
 
+        [HttpGet("userlist")]
+        [AllowAnonymous]
+        public async Task<IActionResult> UserLit()
+        {
+            var data = await _db.GetDataAsync<IdentityDto>("Identity");
+            return Ok(data);
+        }
+
         [HttpGet("contact")]
         public async Task<IActionResult> Contacts()
         {
