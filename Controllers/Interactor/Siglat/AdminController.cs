@@ -34,6 +34,41 @@ namespace SIGLATAPI.Controllers.WhoAmI
             return Ok(data);
         }
 
+        [HttpDelete("user")]
+        [AllowAnonymous]
+        public async Task<IActionResult> DeleteUser(Guid Id)
+        {
+            await _db.DeleteDataAsync("Identity", Id);
+            return Ok(Id);
+        }
+
+        [HttpPost("verification-action")]
+        [AllowAnonymous]
+        public async Task<IActionResult> VerificationAction([FromBody] VerificationDto Verification)
+        {
+            Verification.UpdatedAt = DateTime.UtcNow;
+            await _db.PostDataAsync<VerificationDto>("Verifications", Verification, Verification.Id);
+            return Ok(Verification);
+        }
+
+
+        [HttpPost("update-user")]
+        [AllowAnonymous]
+        public async Task<IActionResult> UpdateUser([FromBody] IdentityDto User)
+        {
+            User.UpdatedAt = DateTime.UtcNow;
+            await _db.PostDataAsync<IdentityDto>("Identity", User, User.Id);
+            return Ok(User);
+        }
+
+        [HttpGet("verify")]
+        [AllowAnonymous]
+        public async Task<IActionResult> Verify()
+        {
+            var data = await _db.GetDataAsync<VerificationDto>("Verifications");
+            return Ok(data);
+        }
+
         [HttpGet("contact")]
         public async Task<IActionResult> Contacts()
         {
