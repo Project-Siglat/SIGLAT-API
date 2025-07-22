@@ -5,6 +5,7 @@ namespace Craftmatrix.org.Model
         public Guid Id { get; set; }
         public string B64Image { get; set; }
         public string VerificationType { get; set; }
+        public string Remarks { get; set; }
         public string Status { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }

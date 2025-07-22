@@ -81,6 +81,7 @@ namespace SIGLATAPI.Controllers.WhoAmI
                     Id = Guid.Parse(tokenData),
                     B64Image = IMG,
                     Status = "pending",
+                    Remarks = "",
                     VerificationType = DocuType,
                     CreatedAt = DateTime.UtcNow,
                     UpdatedAt = DateTime.UtcNow
@@ -104,7 +105,7 @@ namespace SIGLATAPI.Controllers.WhoAmI
             // return Ok(verified.Status);
             if (verified != null)
             {
-                if (verified.Status == "accepted")
+                if (verified.Status == "approved")
                 {
                     return Ok("accepted");
 
