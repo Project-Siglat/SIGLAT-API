@@ -48,6 +48,32 @@ namespace SIGLATAPI.Controllers.WhoAmI
             // return Ok(tokenData.ToString());
         }
 
+        [HttpPost("update")]
+        public async Task<IActionResult> ChangeInfo([FromBody] IdentityDto identityDto)
+        {
+            var token = HttpContext.Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+            var handler = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler();
+            var jsonToken = handler.ReadToken(token) as System.IdentityModel.Tokens.Jwt.JwtSecurityToken;
+            var tokenData = jsonToken.Payload.Jti;
+
+            var user = await _db.GetSingleDataAsync<IdentityDto>("Identity", tokenData.ToString());
+            user.Id = Guid.Parse(tokenData);
+            user.FirstName = identityDto.FirstName;
+            user.MiddleName = identityDto.MiddleName;
+            user.LastName = identityDto.LastName;
+            user.Address = identityDto.Address;
+            user.Gender = identityDto.Gender;
+            user.PhoneNumber = identityDto.PhoneNumber;
+            user.Role = identityDto.Role;
+            user.DateOfBirth = identityDto.DateOfBirth;
+            user.Email = identityDto.Email;
+            user.UpdatedAt = DateTime.UtcNow;
+
+
+            var whoami = await _db.PostDataAsync<IdentityDto>("Identity", user, user.Id);
+            return Ok(whoami);
+        }
+
         [HttpPost("change-pass")]
         public async Task<IActionResult> ChangePassword(string pass)
         {
