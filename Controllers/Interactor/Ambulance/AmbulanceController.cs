@@ -19,6 +19,15 @@ namespace SIGLAT.API.Controllers.Ambulance
             _httpClientFactory = httpClientFactory;
         }
 
+        [HttpPost("alert")]
+        public async Task<IActionResult> Alert([FromBody] AlertDto alerto)
+        {
+            alerto.Id = Guid.NewGuid();
+            alerto.RespondedAt = DateTime.UtcNow;
+            await _db.PostDataAsync<AlertDto>("Alerts", alerto, alerto.Id);
+            return Ok(new { message = "Alert posted successfully" });
+        }
+
         [HttpGet]
         public async Task<IActionResult> AmbulanceLists()
         {
