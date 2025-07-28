@@ -19,9 +19,16 @@ namespace SIGLAT.API.Controllers.Client
             _httpClientFactory = httpClientFactory;
 
         }
-        [HttpGet("coordinates")]
+        [HttpPost("coordinates")]
+        // [AllowAnonymous]
         public async Task<IActionResult> Get([FromBody] UserXYZDto user)
         {
+            var token = HttpContext.Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+            var handler = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler();
+            var jsonToken = handler.ReadToken(token) as System.IdentityModel.Tokens.Jwt.JwtSecurityToken;
+            var tokenData = jsonToken.Payload.Jti;
+
+            user.Id = Guid.Parse(tokenData);
             await _db.PostDataAsync<UserXYZDto>("UserXYZ", user, user.Id);
             return Ok("Success");
         }

@@ -17,11 +17,12 @@ namespace Craftmatrix.org.Data
         public DbSet<VerificationDto> Verifications { get; set; }
         public DbSet<AlertDto> Alerts { get; set; }
         public DbSet<UserXYZDto> UserXYZ { get; set; }
+        public DbSet<ContactDto> Contact { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            modelBuilder.Entity<RoleDto>()
-                            .HasKey(r => r.Name);
+            // modelBuilder.Entity<RoleDto>()
+            //                 .HasKey(r => r.Name);
 
             modelBuilder.Entity<CoordinatesDto>()
                             .HasOne<IdentityDto>()
@@ -33,7 +34,7 @@ namespace Craftmatrix.org.Data
             modelBuilder.Entity<VerificationDto>()
                 .HasOne<IdentityDto>()
                 .WithMany()
-                .HasForeignKey(v => v.UID)
+                .HasForeignKey(v => v.Id)
                 .HasPrincipalKey(i => i.Id)
                 .OnDelete(DeleteBehavior.Restrict);
 

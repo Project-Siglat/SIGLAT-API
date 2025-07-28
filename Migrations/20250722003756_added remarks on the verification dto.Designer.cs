@@ -3,6 +3,7 @@ using System;
 using Craftmatrix.org.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace SIGLATAPI.Migrations
 {
     [DbContext(typeof(AppDBContext))]
-    partial class AppDBContextModelSnapshot : ModelSnapshot
+    [Migration("20250722003756_added remarks on the verification dto")]
+    partial class addedremarksontheverificationdto
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -44,10 +47,6 @@ namespace SIGLATAPI.Migrations
 
                     b.Property<Guid>("Uid")
                         .HasColumnType("uuid");
-
-                    b.Property<string>("What")
-                        .IsRequired()
-                        .HasColumnType("text");
 
                     b.HasKey("Id");
 

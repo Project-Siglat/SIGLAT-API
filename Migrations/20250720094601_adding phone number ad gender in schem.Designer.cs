@@ -3,6 +3,7 @@ using System;
 using Craftmatrix.org.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace SIGLATAPI.Migrations
 {
     [DbContext(typeof(AppDBContext))]
-    partial class AppDBContextModelSnapshot : ModelSnapshot
+    [Migration("20250720094601_adding phone number ad gender in schem")]
+    partial class addingphonenumberadgenderinschem
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -45,10 +48,6 @@ namespace SIGLATAPI.Migrations
                     b.Property<Guid>("Uid")
                         .HasColumnType("uuid");
 
-                    b.Property<string>("What")
-                        .IsRequired()
-                        .HasColumnType("text");
-
                     b.HasKey("Id");
 
                     b.HasIndex("Responder");
@@ -56,35 +55,6 @@ namespace SIGLATAPI.Migrations
                     b.HasIndex("Uid");
 
                     b.ToTable("Alerts");
-                });
-
-            modelBuilder.Entity("Craftmatrix.org.Model.ContactDto", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("ContactInformation")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("ContactType")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Label")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Contact");
                 });
 
             modelBuilder.Entity("Craftmatrix.org.Model.CoordinatesDto", b =>
@@ -135,10 +105,6 @@ namespace SIGLATAPI.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<string>("Gender")
-                        .IsRequired()
-                        .HasColumnType("text");
-
                     b.Property<string>("HashPass")
                         .IsRequired()
                         .HasColumnType("text");
@@ -148,10 +114,6 @@ namespace SIGLATAPI.Migrations
                         .HasColumnType("text");
 
                     b.Property<string>("MiddleName")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("PhoneNumber")
                         .IsRequired()
                         .HasColumnType("text");
 
@@ -167,6 +129,26 @@ namespace SIGLATAPI.Migrations
                     b.ToTable("Identity");
                 });
 
+            modelBuilder.Entity("Craftmatrix.org.Model.RoleDto", b =>
+                {
+                    b.Property<string>("Name")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Name");
+
+                    b.ToTable("RoleDto");
+                });
+
             modelBuilder.Entity("Craftmatrix.org.Model.VerificationDto", b =>
                 {
                     b.Property<Guid>("Id")
@@ -178,10 +160,6 @@ namespace SIGLATAPI.Migrations
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Remarks")
-                        .IsRequired()
-                        .HasColumnType("text");
 
                     b.Property<string>("Status")
                         .IsRequired()

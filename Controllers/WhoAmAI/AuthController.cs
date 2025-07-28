@@ -54,6 +54,8 @@ namespace SIGLATAPI.Controllers.WhoAmI
                     request.Address,
                     request.Role,
                     request.DateOfBirth,
+                    request.Gender,
+                    request.PhoneNumber,
                     request.Email,
                     request.HashPass,
                     request.CreatedAt,
@@ -75,8 +77,26 @@ namespace SIGLATAPI.Controllers.WhoAmI
         {
             var existingIdentity = await _db.GetDataByColumnAsync<IdentityDto>("Identity", "Email", request.Email);
             var data = existingIdentity.FirstOrDefault();
-            var outputer = GenerateToken(request.Email, data.Id.ToString(), data.Role);
-            return Ok(outputer);
+            if (data == null)
+            {
+                return NotFound("User not found");
+            }
+            else
+            {
+                var verify = PasswordService.VerifyPassword(request.Password, data.HashPass);
+                if (verify)
+                {
+                    var token = GenerateToken(data.Email, data.Id.ToString(), data.Role);
+                    return Ok(new { role = data.Role, token });
+
+                }
+                else
+                {
+                    return BadRequest("Wrong Password");
+                }
+                // return Ok(new { pass, data.HashPass });
+
+            }
         }
 
         private string GenerateToken(string email, string userId, string role)
