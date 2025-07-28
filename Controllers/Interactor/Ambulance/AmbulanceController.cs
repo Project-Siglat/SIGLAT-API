@@ -20,12 +20,28 @@ namespace SIGLAT.API.Controllers.Ambulance
         }
 
         [HttpPost("alert")]
+        [AllowAnonymous]
         public async Task<IActionResult> Alert([FromBody] AlertDto alerto)
         {
+            var token = HttpContext.Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+            var handler = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler();
+            var jsonToken = handler.ReadToken(token) as System.IdentityModel.Tokens.Jwt.JwtSecurityToken;
+            var tokenData = jsonToken.Payload.Jti;
+
             alerto.Id = Guid.NewGuid();
+            alerto.Uid = Guid.Parse(tokenData);
             alerto.RespondedAt = DateTime.UtcNow;
             await _db.PostDataAsync<AlertDto>("Alerts", alerto, alerto.Id);
-            return Ok(new { message = "Alert posted successfully" });
+            return Ok("Alert posted successfully");
+        }
+
+        [HttpGet("alert")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetAlert()
+        {
+            var data = await _db.GetDataAsync<AlertDto>("Alerts");
+            var latest = data.OrderByDescending(x => x.RespondedAt).ToArray();
+            return Ok(latest.FirstOrDefault());
         }
 
         [HttpGet]
