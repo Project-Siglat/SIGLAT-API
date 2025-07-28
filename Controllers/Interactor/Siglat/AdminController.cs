@@ -57,6 +57,9 @@ namespace SIGLATAPI.Controllers.WhoAmI
         public async Task<IActionResult> UpdateUser([FromBody] IdentityDto User)
         {
             User.UpdatedAt = DateTime.UtcNow;
+            var data = await _db.GetSingleDataAsync<IdentityDto>("Identity", User.Id);
+            User.HashPass = data.HashPass;
+
             await _db.PostDataAsync<IdentityDto>("Identity", User, User.Id);
             return Ok(User);
         }

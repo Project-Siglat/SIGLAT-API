@@ -113,6 +113,25 @@ namespace SIGLATAPI.Controllers.WhoAmI
                     UpdatedAt = DateTime.UtcNow
                 };
 
+                var me = await _db.GetSingleDataAsync<IdentityDto>("Identity", tokenData);
+                if (me == null ||
+                                    me.Id == Guid.Empty ||
+                                    string.IsNullOrEmpty(me.FirstName) ||
+                                    string.IsNullOrEmpty(me.MiddleName) ||
+                                    string.IsNullOrEmpty(me.LastName) ||
+                                    string.IsNullOrEmpty(me.Address) ||
+                                    string.IsNullOrEmpty(me.Gender) ||
+                                    string.IsNullOrEmpty(me.PhoneNumber) ||
+                                    string.IsNullOrEmpty(me.Role) ||
+                                    me.DateOfBirth == DateTime.MinValue ||
+                                    string.IsNullOrEmpty(me.Email) ||
+                                    string.IsNullOrEmpty(me.HashPass) ||
+                                    me.CreatedAt == DateTime.MinValue ||
+                                    me.UpdatedAt == DateTime.MinValue)
+                {
+                    return BadRequest("User data is incomplete. Please complete your profile before verification.");
+                }
+
                 await _db.PostDataAsync<VerificationDto>("Verifications", verification, verification.Id);
                 return Ok("Verify?");
             }
