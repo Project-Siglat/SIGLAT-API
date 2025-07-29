@@ -76,6 +76,7 @@ namespace SIGLATAPI.Controllers.WhoAmI
         public async Task<IActionResult> Contacts()
         {
             var data = await _db.GetDataAsync<ContactDto>("Contact");
+            data = data.OrderBy(x => x.ContactType).ToList();
             return Ok(data);
         }
 
