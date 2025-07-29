@@ -38,19 +38,19 @@ namespace Craftmatrix.org.Data
                 .HasPrincipalKey(i => i.Id)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            modelBuilder.Entity<AlertDto>()
-                .HasOne<IdentityDto>()
-                .WithMany()
-                .HasForeignKey(a => a.Uid)
-                .HasPrincipalKey(i => i.Id)
-                .OnDelete(DeleteBehavior.Restrict);
+            // modelBuilder.Entity<AlertDto>()
+            //     .HasOne<IdentityDto>()
+            //     .WithMany()
+            //     .HasForeignKey(a => a.Uid)
+            //     .HasPrincipalKey(i => i.Id)
+            //     .OnDelete(DeleteBehavior.Restrict);
 
-            modelBuilder.Entity<AlertDto>()
-                .HasOne<IdentityDto>()
-                .WithMany()
-                .HasForeignKey(a => a.Responder)
-                .HasPrincipalKey(i => i.Id)
-                .OnDelete(DeleteBehavior.Restrict);
+            // modelBuilder.Entity<AlertDto>()
+            //     .HasOne<IdentityDto>()
+            //     .WithMany()
+            //     .HasForeignKey(a => a.Responder)
+            //     .HasPrincipalKey(i => i.Id)
+            //     .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }
