@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("SIGLAT-API")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+18ab0a9f12970e09531a48585a879aadfc95db59")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+811929c844a236fde60645f79f37c64287a039c2")]
 [assembly: System.Reflection.AssemblyProductAttribute("SIGLAT-API")]
 [assembly: System.Reflection.AssemblyTitleAttribute("SIGLAT-API")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

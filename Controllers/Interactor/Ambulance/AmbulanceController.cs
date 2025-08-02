@@ -56,6 +56,14 @@ namespace SIGLAT.API.Controllers.Ambulance
             var data = await _db.GetDataAsync<AlertDto>("Alerts");
             var latest = data.OrderByDescending(x => x.RespondedAt).ToArray();
             var specific = latest.FirstOrDefault(x => x.Uid == Guid.Parse(tokenData));
+
+            var zawarudo = await _db.GetSingleDataAsync<UserXYZDto>("UserXYZ", specific.Responder);
+            if (zawarudo == null)
+            {
+                return NotFound("Responder not found");
+            }
+            specific.Latitude = zawarudo.Latitude;
+            specific.Longitude = zawarudo.Longitude;
             return Ok(specific);
         }
 
