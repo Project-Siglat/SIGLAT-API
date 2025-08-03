@@ -19,6 +19,14 @@ namespace SIGLAT.API.Controllers.Ambulance
             _httpClientFactory = httpClientFactory;
         }
 
+        [HttpGet("all-alert")]
+        public async Task<IActionResult> GetAllAlerts()
+        {
+            var data = await _db.GetDataAsync<AlertDto>("Alerts");
+            var latest = data.OrderByDescending(x => x.RespondedAt).ToArray();
+            return Ok(latest);
+        }
+
         [HttpPost("alert")]
         [AllowAnonymous]
         public async Task<IActionResult> Alert([FromBody] AlertDto alerto)
@@ -64,6 +72,13 @@ namespace SIGLAT.API.Controllers.Ambulance
             }
             specific.Latitude = zawarudo.Latitude;
             specific.Longitude = zawarudo.Longitude;
+
+            // Don't update route if status is done
+            if (specific.Status == "Done")
+            {
+                return NoContent();
+            }
+
             return Ok(specific);
         }
 
@@ -90,6 +105,31 @@ namespace SIGLAT.API.Controllers.Ambulance
             }
             specific.Latitude = zawarudo.Latitude;
             specific.Longitude = zawarudo.Longitude;
+
+            if (specific.Status == "Done")
+            {
+                return NoContent();
+            }
+
+            return Ok(specific);
+        }
+
+        [HttpGet("alert/current/amb/{id}")]
+        [AllowAnonymous]
+        public async Task<IActionResult> AmbulanceDone(Guid id)
+        {
+            var data = await _db.GetDataAsync<AlertDto>("Alerts");
+            var latest = data.OrderByDescending(x => x.RespondedAt).ToArray();
+            var specific = latest.FirstOrDefault(x => x.Responder == id);
+
+            if (specific == null)
+            {
+                return NotFound("Alert not found");
+            }
+
+            specific.Status = "Done";
+            await _db.PostDataAsync<AlertDto>("Alerts", specific, specific.Id);
+
             return Ok(specific);
         }
 
