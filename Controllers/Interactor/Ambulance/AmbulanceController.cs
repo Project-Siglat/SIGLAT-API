@@ -67,6 +67,32 @@ namespace SIGLAT.API.Controllers.Ambulance
             return Ok(specific);
         }
 
+        [HttpGet("alert/current/amb")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetCurrentAlertAmb()
+        {
+            var token = HttpContext.Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+            var handler = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler();
+            var jsonToken = handler.ReadToken(token) as System.IdentityModel.Tokens.Jwt.JwtSecurityToken;
+            var tokenData = jsonToken.Payload.Jti;
+
+
+            var data = await _db.GetDataAsync<AlertDto>("Alerts");
+            var latest = data.OrderByDescending(x => x.RespondedAt).ToArray();
+            var specific = latest.FirstOrDefault(x => x.Responder == Guid.Parse(tokenData));
+
+            // return Ok(new { tokenData, latest });
+
+            var zawarudo = await _db.GetSingleDataAsync<UserXYZDto>("UserXYZ", specific.Uid);
+            if (zawarudo == null)
+            {
+                return NotFound("Responder not found");
+            }
+            specific.Latitude = zawarudo.Latitude;
+            specific.Longitude = zawarudo.Longitude;
+            return Ok(specific);
+        }
+
         [HttpGet]
         public async Task<IActionResult> AmbulanceLists()
         {
