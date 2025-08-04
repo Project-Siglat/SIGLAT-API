@@ -19,6 +19,14 @@ namespace SIGLAT.API.Controllers.Ambulance
             _httpClientFactory = httpClientFactory;
         }
 
+        [HttpGet("all-alert")]
+        public async Task<IActionResult> GetAllAlerts()
+        {
+            var data = await _db.GetDataAsync<AlertDto>("Alerts");
+            var latest = data.OrderByDescending(x => x.RespondedAt).ToArray();
+            return Ok(latest);
+        }
+
         [HttpPost("alert")]
         [AllowAnonymous]
         public async Task<IActionResult> Alert([FromBody] AlertDto alerto)
@@ -42,6 +50,87 @@ namespace SIGLAT.API.Controllers.Ambulance
             var data = await _db.GetDataAsync<AlertDto>("Alerts");
             var latest = data.OrderByDescending(x => x.RespondedAt).ToArray();
             return Ok(latest.FirstOrDefault());
+        }
+
+        [HttpGet("alert/current")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetCurrentAlert()
+        {
+            var token = HttpContext.Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+            var handler = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler();
+            var jsonToken = handler.ReadToken(token) as System.IdentityModel.Tokens.Jwt.JwtSecurityToken;
+            var tokenData = jsonToken.Payload.Jti;
+
+            var data = await _db.GetDataAsync<AlertDto>("Alerts");
+            var latest = data.OrderByDescending(x => x.RespondedAt).ToArray();
+            var specific = latest.FirstOrDefault(x => x.Uid == Guid.Parse(tokenData));
+
+            var zawarudo = await _db.GetSingleDataAsync<UserXYZDto>("UserXYZ", specific.Responder);
+            if (zawarudo == null)
+            {
+                return NotFound("Responder not found");
+            }
+            specific.Latitude = zawarudo.Latitude;
+            specific.Longitude = zawarudo.Longitude;
+
+            // Don't update route if status is done
+            if (specific.Status == "Done")
+            {
+                return NoContent();
+            }
+
+            return Ok(specific);
+        }
+
+        [HttpGet("alert/current/amb")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetCurrentAlertAmb()
+        {
+            var token = HttpContext.Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+            var handler = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler();
+            var jsonToken = handler.ReadToken(token) as System.IdentityModel.Tokens.Jwt.JwtSecurityToken;
+            var tokenData = jsonToken.Payload.Jti;
+
+
+            var data = await _db.GetDataAsync<AlertDto>("Alerts");
+            var latest = data.OrderByDescending(x => x.RespondedAt).ToArray();
+            var specific = latest.FirstOrDefault(x => x.Responder == Guid.Parse(tokenData));
+
+            // return Ok(new { tokenData, latest });
+
+            var zawarudo = await _db.GetSingleDataAsync<UserXYZDto>("UserXYZ", specific.Uid);
+            if (zawarudo == null)
+            {
+                return NotFound("Responder not found");
+            }
+            specific.Latitude = zawarudo.Latitude;
+            specific.Longitude = zawarudo.Longitude;
+
+            if (specific.Status == "Done")
+            {
+                return NoContent();
+            }
+
+            return Ok(specific);
+        }
+
+        [HttpGet("alert/current/amb/{id}")]
+        [AllowAnonymous]
+        public async Task<IActionResult> AmbulanceDone(Guid id)
+        {
+            var data = await _db.GetDataAsync<AlertDto>("Alerts");
+            var latest = data.OrderByDescending(x => x.RespondedAt).ToArray();
+            var specific = latest.FirstOrDefault(x => x.Responder == id);
+
+            if (specific == null)
+            {
+                return NotFound("Alert not found");
+            }
+
+            specific.Status = "Done";
+            await _db.PostDataAsync<AlertDto>("Alerts", specific, specific.Id);
+
+            return Ok(specific);
         }
 
         [HttpGet]

@@ -26,6 +26,37 @@ namespace SIGLATAPI.Controllers.WhoAmI
 
         }
 
+        [HttpGet("admin")]
+        public async Task<IActionResult> Admin()
+        {
+            var admins = await _db.GetDataAsync<IdentityDto>("Identity");
+            var admin = admins.Where(x => x.Role == "Admin");
+            if (admin == null || !admin.Any())
+            {
+                var adminUser = new IdentityDto
+                {
+                    Id = Guid.NewGuid(),
+                    FirstName = "admin",
+                    MiddleName = "",
+                    LastName = "",
+                    Address = "",
+                    Gender = "",
+                    PhoneNumber = "",
+                    Role = "Admin",
+                    DateOfBirth = DateTime.MinValue,
+                    Email = "admin@gmail.com",
+                    HashPass = PasswordService.HashPassword("1234"),
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                };
+
+                var data = await _db.PostDataAsync<IdentityDto>("Identity", adminUser, adminUser.Id);
+                return Ok(data);
+            }
+
+            return Ok(admin);
+        }
+
         [HttpGet("userlist")]
         [AllowAnonymous]
         public async Task<IActionResult> UserLit()
@@ -68,8 +99,29 @@ namespace SIGLATAPI.Controllers.WhoAmI
         [AllowAnonymous]
         public async Task<IActionResult> Verify()
         {
-            var data = await _db.GetDataAsync<VerificationDto>("Verifications");
-            return Ok(data);
+            var dataTask = _db.GetDataAsync<VerificationDto>("Verifications");
+            var dataxTask = _db.GetDataAsync<IdentityDto>("Identity");
+
+            await Task.WhenAll(dataTask, dataxTask);
+
+            var data = await dataTask;
+            var datax = await dataxTask;
+
+            var verificationDetails = data.Select(verification => new VerificationDetailsDto
+            {
+                Id = verification.Id,
+                B64Image = verification.B64Image,
+                Name = datax.FirstOrDefault(identity => identity.Id == verification.Id)?.FirstName + " " +
+                       datax.FirstOrDefault(identity => identity.Id == verification.Id)?.MiddleName + " " +
+                       datax.FirstOrDefault(identity => identity.Id == verification.Id)?.LastName,
+                VerificationType = verification.VerificationType,
+                Remarks = verification.Remarks,
+                Status = verification.Status,
+                CreatedAt = verification.CreatedAt,
+                UpdatedAt = verification.UpdatedAt
+            }).ToList();
+
+            return Ok(verificationDetails);
         }
 
         [HttpGet("contact")]
