@@ -87,11 +87,27 @@ namespace SIGLATAPI.Controllers.WhoAmI
                 if (verify)
                 {
                     var token = GenerateToken(data.Email, data.Id.ToString(), data.Role);
+                    LoginLogsDto logogo = new LoginLogsDto
+                    {
+                        Id = Guid.NewGuid(),
+                        Who = data.Id,
+                        Status = "Success",
+                        CreatedAt = DateTime.UtcNow,
+                    };
+                    await _db.PostDataAsync<LoginLogsDto>("LoginLogs", logogo, logogo.Id);
                     return Ok(new { role = data.Role, token });
 
                 }
                 else
                 {
+                    LoginLogsDto logogo = new LoginLogsDto
+                    {
+                        Id = Guid.NewGuid(),
+                        Who = data.Id,
+                        Status = "Failed",
+                        CreatedAt = DateTime.UtcNow,
+                    };
+                    await _db.PostDataAsync<LoginLogsDto>("LoginLogs", logogo, logogo.Id);
                     return BadRequest("Wrong Password");
                 }
                 // return Ok(new { pass, data.HashPass });
