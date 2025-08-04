@@ -19,6 +19,7 @@ namespace Craftmatrix.org.Data
         public DbSet<UserXYZDto> UserXYZ { get; set; }
         public DbSet<ContactDto> Contact { get; set; }
         public DbSet<ChatDto> Chat { get; set; }
+        public DbSet<LoginLogsDto> LoginLogs { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
