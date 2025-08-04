@@ -91,7 +91,7 @@ namespace SIGLATAPI.Controllers.WhoAmI
                     {
                         Id = Guid.NewGuid(),
                         Who = data.Id,
-                        Status = "Success",
+                        What = "Success",
                         CreatedAt = DateTime.UtcNow,
                     };
                     await _db.PostDataAsync<LoginLogsDto>("LoginLogs", logogo, logogo.Id);
@@ -104,7 +104,7 @@ namespace SIGLATAPI.Controllers.WhoAmI
                     {
                         Id = Guid.NewGuid(),
                         Who = data.Id,
-                        Status = "Failed",
+                        What = "Failed",
                         CreatedAt = DateTime.UtcNow,
                     };
                     await _db.PostDataAsync<LoginLogsDto>("LoginLogs", logogo, logogo.Id);
