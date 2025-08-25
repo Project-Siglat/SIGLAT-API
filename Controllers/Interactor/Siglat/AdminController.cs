@@ -12,7 +12,7 @@ namespace SIGLATAPI.Controllers.WhoAmI
 {
     [ApiController]
     [ApiVersion("1.0")]
-    // [Authorize]
+    [Authorize]
     [Route("api/v{version:apiVersion}/[controller]")]
     public class AdminController : ControllerBase
     {
@@ -26,105 +26,278 @@ namespace SIGLATAPI.Controllers.WhoAmI
 
         }
 
-        [HttpGet("admin")]
-        public async Task<IActionResult> Admin()
-        {
-            var admins = await _db.GetDataAsync<IdentityDto>("Identity");
-            var admin = admins.Where(x => x.Role == "Admin");
-            if (admin == null || !admin.Any())
-            {
-                var adminUser = new IdentityDto
-                {
-                    Id = Guid.NewGuid(),
-                    FirstName = "admin",
-                    MiddleName = "",
-                    LastName = "",
-                    Address = "",
-                    Gender = "",
-                    PhoneNumber = "",
-                    Role = "Admin",
-                    DateOfBirth = DateTime.MinValue,
-                    Email = "admin@gmail.com",
-                    HashPass = PasswordService.HashPassword("1234"),
-                    CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = DateTime.UtcNow
-                };
-
-                var data = await _db.PostDataAsync<IdentityDto>("Identity", adminUser, adminUser.Id);
-                return Ok(data);
-            }
-
-            return Ok(admin);
-        }
-
         [HttpGet("userlist")]
-        [AllowAnonymous]
-        public async Task<IActionResult> UserLit()
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> UserList()
         {
-            var data = await _db.GetDataAsync<IdentityDto>("Identity");
-            return Ok(data);
+            try
+            {
+                var data = await _db.GetDataAsync<IdentityDto>("Identity");
+                
+                // Remove sensitive information like passwords
+                var sanitizedUsers = data.Select(user => new 
+                {
+                    user.Id,
+                    user.FirstName,
+                    user.MiddleName,
+                    user.LastName,
+                    user.Email,
+                    user.PhoneNumber,
+                    user.Role,
+                    user.Gender,
+                    user.DateOfBirth,
+                    user.Address,
+                    user.CreatedAt,
+                    user.UpdatedAt
+                }).OrderByDescending(u => u.CreatedAt);
+                
+                return Ok(sanitizedUsers);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Failed to retrieve users", error = ex.Message });
+            }
         }
 
-        [HttpDelete("user")]
-        [AllowAnonymous]
-        public async Task<IActionResult> DeleteUser(Guid Id)
+        [HttpGet("user/{id}")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> GetUser(Guid id)
         {
-            await _db.DeleteDataAsync("Identity", Id);
-            return Ok(Id);
+            try
+            {
+                var user = await _db.GetSingleDataAsync<IdentityDto>("Identity", id);
+                if (user == null)
+                {
+                    return NotFound(new { message = "User not found" });
+                }
+                
+                // Remove sensitive information
+                var sanitizedUser = new 
+                {
+                    user.Id,
+                    user.FirstName,
+                    user.MiddleName,
+                    user.LastName,
+                    user.Email,
+                    user.PhoneNumber,
+                    user.Role,
+                    user.Gender,
+                    user.DateOfBirth,
+                    user.Address,
+                    user.CreatedAt,
+                    user.UpdatedAt
+                };
+                
+                return Ok(sanitizedUser);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Failed to retrieve user", error = ex.Message });
+            }
+        }
+
+        [HttpDelete("user/{id}")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> DeleteUser(Guid id)
+        {
+            try
+            {
+                // Check if user exists
+                var existingUser = await _db.GetSingleDataAsync<IdentityDto>("Identity", id);
+                if (existingUser == null)
+                {
+                    return NotFound(new { message = "User not found" });
+                }
+                
+                // Prevent deleting the last admin
+                if (existingUser.Role == "Admin")
+                {
+                    var adminCount = (await _db.GetDataByColumnAsync<IdentityDto>("Identity", "Role", "Admin")).Count();
+                    if (adminCount <= 1)
+                    {
+                        return BadRequest(new { message = "Cannot delete the last admin user" });
+                    }
+                }
+                
+                await _db.DeleteDataAsync("Identity", id);
+                return Ok(new { message = "User deleted successfully", id });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Failed to delete user", error = ex.Message });
+            }
         }
 
         [HttpPost("verification-action")]
-        [AllowAnonymous]
-        public async Task<IActionResult> VerificationAction([FromBody] VerificationDto Verification)
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> VerificationAction([FromBody] VerificationDto verification)
         {
-            Verification.UpdatedAt = DateTime.UtcNow;
-            await _db.PostDataAsync<VerificationDto>("Verifications", Verification, Verification.Id);
-            return Ok(Verification);
-        }
-
-
-        [HttpPost("update-user")]
-        [AllowAnonymous]
-        public async Task<IActionResult> UpdateUser([FromBody] IdentityDto User)
-        {
-            User.UpdatedAt = DateTime.UtcNow;
-            var data = await _db.GetSingleDataAsync<IdentityDto>("Identity", User.Id);
-            User.HashPass = data.HashPass;
-
-            await _db.PostDataAsync<IdentityDto>("Identity", User, User.Id);
-            return Ok(User);
-        }
-
-        [HttpGet("verify")]
-        [AllowAnonymous]
-        public async Task<IActionResult> Verify()
-        {
-            var dataTask = _db.GetDataAsync<VerificationDto>("Verifications");
-            var dataxTask = _db.GetDataAsync<IdentityDto>("Identity");
-
-            await Task.WhenAll(dataTask, dataxTask);
-
-            var data = await dataTask;
-            var datax = await dataxTask;
-
-            var verificationDetails = data.Select(verification => new VerificationDetailsDto
+            try
             {
-                Id = verification.Id,
-                B64Image = verification.B64Image,
-                Name = datax.FirstOrDefault(identity => identity.Id == verification.Id)?.FirstName + " " +
-                       datax.FirstOrDefault(identity => identity.Id == verification.Id)?.MiddleName + " " +
-                       datax.FirstOrDefault(identity => identity.Id == verification.Id)?.LastName,
-                VerificationType = verification.VerificationType,
-                Remarks = verification.Remarks,
-                Status = verification.Status,
-                CreatedAt = verification.CreatedAt,
-                UpdatedAt = verification.UpdatedAt
-            }).ToList();
+                verification.UpdatedAt = DateTime.UtcNow;
+                await _db.PostDataAsync<VerificationDto>("Verifications", verification, verification.Id);
+                return Ok(verification);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Failed to update verification", error = ex.Message });
+            }
+        }
 
-            return Ok(verificationDetails);
+
+        [HttpPut("user/{id}")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> UpdateUser(Guid id, [FromBody] IdentityDto user)
+        {
+            try
+            {
+                if (id != user.Id)
+                {
+                    return BadRequest(new { message = "User ID mismatch" });
+                }
+                
+                var existingUser = await _db.GetSingleDataAsync<IdentityDto>("Identity", id);
+                if (existingUser == null)
+                {
+                    return NotFound(new { message = "User not found" });
+                }
+                
+                // Preserve the password if not provided
+                user.HashPass = existingUser.HashPass;
+                user.UpdatedAt = DateTime.UtcNow;
+                user.CreatedAt = existingUser.CreatedAt; // Preserve original creation date
+                
+                await _db.PostDataAsync<IdentityDto>("Identity", user, user.Id);
+                
+                // Return sanitized user data
+                var sanitizedUser = new 
+                {
+                    user.Id,
+                    user.FirstName,
+                    user.MiddleName,
+                    user.LastName,
+                    user.Email,
+                    user.PhoneNumber,
+                    user.Role,
+                    user.Gender,
+                    user.DateOfBirth,
+                    user.Address,
+                    user.CreatedAt,
+                    user.UpdatedAt
+                };
+                
+                return Ok(sanitizedUser);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Failed to update user", error = ex.Message });
+            }
+        }
+
+        [HttpPut("user/{id}/role")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> UpdateUserRole(Guid id, [FromBody] UserRoleUpdateDto roleUpdate)
+        {
+            try
+            {
+                var existingUser = await _db.GetSingleDataAsync<IdentityDto>("Identity", id);
+                if (existingUser == null)
+                {
+                    return NotFound(new { message = "User not found" });
+                }
+                
+                // Prevent removing admin role from the last admin
+                if (existingUser.Role == "Admin" && roleUpdate.Role != "Admin")
+                {
+                    var adminCount = (await _db.GetDataByColumnAsync<IdentityDto>("Identity", "Role", "Admin")).Count();
+                    if (adminCount <= 1)
+                    {
+                        return BadRequest(new { message = "Cannot remove admin role from the last admin user" });
+                    }
+                }
+                
+                existingUser.Role = roleUpdate.Role;
+                existingUser.UpdatedAt = DateTime.UtcNow;
+                
+                await _db.PostDataAsync<IdentityDto>("Identity", existingUser, existingUser.Id);
+                
+                return Ok(new { message = "User role updated successfully", role = roleUpdate.Role });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Failed to update user role", error = ex.Message });
+            }
+        }
+
+        [HttpGet("verifications")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> GetVerifications()
+        {
+            try
+            {
+                var dataTask = _db.GetDataAsync<VerificationDto>("Verifications");
+                var dataxTask = _db.GetDataAsync<IdentityDto>("Identity");
+
+                await Task.WhenAll(dataTask, dataxTask);
+
+                var data = await dataTask;
+                var datax = await dataxTask;
+
+                var verificationDetails = data.Select(verification => new VerificationDetailsDto
+                {
+                    Id = verification.Id,
+                    B64Image = verification.B64Image,
+                    Name = datax.FirstOrDefault(identity => identity.Id == verification.Id)?.FirstName + " " +
+                           datax.FirstOrDefault(identity => identity.Id == verification.Id)?.MiddleName + " " +
+                           datax.FirstOrDefault(identity => identity.Id == verification.Id)?.LastName,
+                    VerificationType = verification.VerificationType,
+                    Remarks = verification.Remarks,
+                    Status = verification.Status,
+                    CreatedAt = verification.CreatedAt,
+                    UpdatedAt = verification.UpdatedAt
+                }).OrderByDescending(v => v.CreatedAt).ToList();
+
+                return Ok(verificationDetails);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Failed to retrieve verifications", error = ex.Message });
+            }
+        }
+
+        [HttpPut("verification/{id}/status")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> UpdateVerificationStatus(Guid id, [FromBody] VerificationStatusUpdateDto statusUpdate)
+        {
+            try
+            {
+                if (!VerificationStatus.IsValidStatus(statusUpdate.Status))
+                {
+                    return BadRequest(new { message = "Invalid verification status" });
+                }
+
+                var existingVerification = await _db.GetSingleDataAsync<VerificationDto>("Verifications", id);
+                if (existingVerification == null)
+                {
+                    return NotFound(new { message = "Verification not found" });
+                }
+
+                existingVerification.Status = statusUpdate.Status.ToLower();
+                existingVerification.Remarks = statusUpdate.Remarks ?? existingVerification.Remarks;
+                existingVerification.UpdatedAt = DateTime.UtcNow;
+
+                await _db.PostDataAsync<VerificationDto>("Verifications", existingVerification, existingVerification.Id);
+
+                return Ok(new { message = "Verification status updated successfully", status = existingVerification.Status });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Failed to update verification status", error = ex.Message });
+            }
         }
 
         [HttpGet("contact")]
+        [AllowAnonymous]
         public async Task<IActionResult> Contacts()
         {
             var data = await _db.GetDataAsync<ContactDto>("Contact");
@@ -133,6 +306,7 @@ namespace SIGLATAPI.Controllers.WhoAmI
         }
 
         [HttpDelete("contact")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> DeleteContact(Guid Id)
         {
             await _db.DeleteDataAsync("Contact", Id);
@@ -140,9 +314,19 @@ namespace SIGLATAPI.Controllers.WhoAmI
         }
 
         [HttpPost("contact")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Contact([FromBody] ContactDto Contact)
         {
             Contact.CreatedAt = DateTime.UtcNow;
+            Contact.UpdatedAt = DateTime.UtcNow;
+            await _db.PostDataAsync<ContactDto>("Contact", Contact, Contact.Id);
+            return Ok(Contact);
+        }
+
+        [HttpPut("contact")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> UpdateContact([FromBody] ContactDto Contact)
+        {
             Contact.UpdatedAt = DateTime.UtcNow;
             await _db.PostDataAsync<ContactDto>("Contact", Contact, Contact.Id);
             return Ok(Contact);

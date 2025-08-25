@@ -7,18 +7,24 @@ using dotenv.net;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc;
 using System.Reflection;
+using SIGLATAPI.Middleware;
+using SIGLATAPI.Services;
 
 DotEnv.Load();
 var Origin = "_Origin";
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-builder.Services.AddSingleton<IPostgreService, PostgreService>();
+// Add model validation
+builder.Services.Configure<ApiBehaviorOptions>(options =>
+{
+    options.SuppressModelStateInvalidFilter = false;
+});
 
+builder.Services.AddSingleton<IPostgreService, PostgreService>();
 
 builder.Services.AddDbContext<AppDBContext>((serviceProvider, options) =>
 {
@@ -27,12 +33,13 @@ builder.Services.AddDbContext<AppDBContext>((serviceProvider, options) =>
 });
 
 builder.Services.AddHostedService<DatabaseInitializer>();
+builder.Services.AddHostedService<AdminInitializationService>();
 builder.Services.AddCors(options =>
 {
     options.AddPolicy(name: Origin,
                       policy =>
                       {
-                          policy.WithOrigins("http://localhost:5050", "https://siglatdev.craftmatrix.org", "https://siglat.craftmatrix.org")
+                           policy.WithOrigins("http://localhost:8080", "http://localhost:5050", "http://localhost:3000", "http://localhost:3001", "https://siglatdev.craftmatrix.org", "https://siglat.craftmatrix.org")
                                 .AllowAnyHeader()
                                 .AllowAnyMethod()
                                 .AllowCredentials();
@@ -118,13 +125,15 @@ builder.Services.AddAuthentication(options =>
 });
 
 var app = builder.Build();
+
+// Add error handling middleware
+app.UseMiddleware<ErrorHandlingMiddleware>();
+
 app.UseCors(Origin);
 // Configure the HTTP request pipeline.
-// if (app.Environment.IsDevelopment())
-// {
 app.UseSwagger();
 app.UseSwaggerUI();
-// }
+
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();

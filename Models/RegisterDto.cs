@@ -2,10 +2,8 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Craftmatrix.org.Model
 {
-    public class IdentityDto
+    public class RegisterDto
     {
-        public Guid Id { get; set; }
-        
         [Required]
         [StringLength(50)]
         public string FirstName { get; set; }
@@ -27,8 +25,6 @@ namespace Craftmatrix.org.Model
         [Phone]
         public string PhoneNumber { get; set; }
         
-        public string Role { get; set; } // Made optional for registration
-        
         [Required]
         public DateTime DateOfBirth { get; set; }
         
@@ -39,8 +35,5 @@ namespace Craftmatrix.org.Model
         [Required]
         [MinLength(6)]
         public string HashPass { get; set; }
-        
-        public DateTime CreatedAt { get; set; }
-        public DateTime UpdatedAt { get; set; }
     }
 }

@@ -3,6 +3,7 @@ using System;
 using Craftmatrix.org.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace SIGLATAPI.Migrations
 {
     [DbContext(typeof(AppDBContext))]
-    partial class AppDBContextModelSnapshot : ModelSnapshot
+    [Migration("20250825101923_AddReportTable")]
+    partial class AddReportTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -216,55 +219,6 @@ namespace SIGLATAPI.Migrations
                     b.ToTable("LoginLogs");
                 });
 
-            modelBuilder.Entity("Craftmatrix.org.Model.ReportDto", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Description")
-                        .IsRequired()
-                        .HasMaxLength(1000)
-                        .HasColumnType("character varying(1000)");
-
-                    b.Property<string>("IncidentType")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
-
-                    b.Property<string>("InvolvedAgencies")
-                        .HasMaxLength(1000)
-                        .HasColumnType("character varying(1000)");
-
-                    b.Property<string>("Notes")
-                        .HasMaxLength(1000)
-                        .HasColumnType("character varying(1000)");
-
-                    b.Property<string>("ReporterEmail")
-                        .HasColumnType("text");
-
-                    b.Property<string>("ReporterName")
-                        .HasColumnType("text");
-
-                    b.Property<DateTime>("Timestamp")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("WhoReportedId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("WhoReportedId");
-
-                    b.ToTable("Reports");
-                });
-
             modelBuilder.Entity("Craftmatrix.org.Model.VerificationDto", b =>
                 {
                     b.Property<Guid>("Id")
@@ -321,15 +275,6 @@ namespace SIGLATAPI.Migrations
                     b.HasOne("Craftmatrix.org.Model.IdentityDto", null)
                         .WithMany()
                         .HasForeignKey("DriverId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("Craftmatrix.org.Model.ReportDto", b =>
-                {
-                    b.HasOne("Craftmatrix.org.Model.IdentityDto", null)
-                        .WithMany()
-                        .HasForeignKey("WhoReportedId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });

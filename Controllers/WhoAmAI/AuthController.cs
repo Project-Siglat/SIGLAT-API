@@ -28,7 +28,7 @@ namespace SIGLATAPI.Controllers.WhoAmI
 
         [HttpPost("register")]
         [AllowAnonymous]
-        public async Task<IActionResult> Register([FromBody] IdentityDto request)
+        public async Task<IActionResult> Register([FromBody] RegisterDto request)
         {
             try
             {
@@ -38,31 +38,42 @@ namespace SIGLATAPI.Controllers.WhoAmI
                     throw new Exception("Email already exists");
                 }
 
-                request.Id = Guid.NewGuid();
-                request.CreatedAt = DateTime.UtcNow;
-                request.UpdatedAt = DateTime.UtcNow;
-                request.Role = "User";
-                request.HashPass = PasswordService.HashPassword(request.HashPass.ToString());
+                var identity = new IdentityDto
+                {
+                    Id = Guid.NewGuid(),
+                    FirstName = request.FirstName,
+                    MiddleName = request.MiddleName,
+                    LastName = request.LastName,
+                    Address = request.Address,
+                    Gender = request.Gender,
+                    PhoneNumber = request.PhoneNumber,
+                    DateOfBirth = request.DateOfBirth,
+                    Email = request.Email,
+                    Role = "User", // Set default role
+                    HashPass = PasswordService.HashPassword(request.HashPass),
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                };
 
                 // Create a new object with DateOfBirth converted to DateTime to avoid Dapper DateOnly issues
                 var identityForDb = new
                 {
-                    request.Id,
-                    request.FirstName,
-                    request.MiddleName,
-                    request.LastName,
-                    request.Address,
-                    request.Role,
-                    request.DateOfBirth,
-                    request.Gender,
-                    request.PhoneNumber,
-                    request.Email,
-                    request.HashPass,
-                    request.CreatedAt,
-                    request.UpdatedAt
+                    identity.Id,
+                    identity.FirstName,
+                    identity.MiddleName,
+                    identity.LastName,
+                    identity.Address,
+                    identity.Role,
+                    identity.DateOfBirth,
+                    identity.Gender,
+                    identity.PhoneNumber,
+                    identity.Email,
+                    identity.HashPass,
+                    identity.CreatedAt,
+                    identity.UpdatedAt
                 };
 
-                await _db.PostDataAsync("Identity", identityForDb, request.Id);
+                await _db.PostDataAsync("Identity", identityForDb, identity.Id);
                 return Ok("Registration successful");
             }
             catch (Exception ex)

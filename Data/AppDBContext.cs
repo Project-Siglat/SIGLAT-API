@@ -20,6 +20,7 @@ namespace Craftmatrix.org.Data
         public DbSet<ContactDto> Contact { get; set; }
         public DbSet<ChatDto> Chat { get; set; }
         public DbSet<LoginLogsDto> LoginLogs { get; set; }
+        public DbSet<ReportDto> Reports { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -53,6 +54,13 @@ namespace Craftmatrix.org.Data
             //     .HasForeignKey(a => a.Responder)
             //     .HasPrincipalKey(i => i.Id)
             //     .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<ReportDto>()
+                .HasOne<IdentityDto>()
+                .WithMany()
+                .HasForeignKey(r => r.WhoReportedId)
+                .HasPrincipalKey(i => i.Id)
+                .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

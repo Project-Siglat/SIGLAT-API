@@ -1,0 +1,233 @@
+Building...
+info: DatabaseInitializer[0]
+      Starting database initialization...
+info: PostgreService[0]
+      Database 'siglat_db' already exists
+info: PostgreService[0]
+      Database initialization completed
+info: DatabaseInitializer[0]
+      Applying database migrations...
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (376ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT EXISTS (
+          SELECT 1 FROM pg_catalog.pg_class c
+          JOIN pg_catalog.pg_namespace n ON n.oid=c.relnamespace
+          WHERE n.nspname='public' AND
+                c.relname='__EFMigrationsHistory'
+      )
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (422ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT "MigrationId", "ProductVersion"
+      FROM "__EFMigrationsHistory"
+      ORDER BY "MigrationId";
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (349ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT EXISTS (
+          SELECT 1 FROM pg_catalog.pg_class c
+          JOIN pg_catalog.pg_namespace n ON n.oid=c.relnamespace
+          WHERE n.nspname='public' AND
+                c.relname='__EFMigrationsHistory'
+      )
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (295ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT EXISTS (
+          SELECT 1 FROM pg_catalog.pg_class c
+          JOIN pg_catalog.pg_namespace n ON n.oid=c.relnamespace
+          WHERE n.nspname='public' AND
+                c.relname='__EFMigrationsHistory'
+      )
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (371ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT "MigrationId", "ProductVersion"
+      FROM "__EFMigrationsHistory"
+      ORDER BY "MigrationId";
+info: Microsoft.EntityFrameworkCore.Migrations[20405]
+      No migrations were applied. The database is already up to date.
+info: DatabaseInitializer[0]
+      Database migrations applied successfully
+info: PostgreService[0]
+      PostgreSQL connection successful
+info: DatabaseInitializer[0]
+      Database connection confirmed
+info: SIGLATAPI.Services.AdminInitializationService[0]
+      Admin Initialization Service started
+info: Microsoft.Hosting.Lifetime[14]
+      Now listening on: http://localhost:5000
+info: Microsoft.Hosting.Lifetime[0]
+      Application started. Press Ctrl+C to shut down.
+info: Microsoft.Hosting.Lifetime[0]
+      Hosting environment: Development
+info: Microsoft.Hosting.Lifetime[0]
+      Content root path: /home/recruas/Projects/Siglat/SIGLAT-API
+info: PostgreService[0]
+      Retrieved 3 records from table 'Identity'
+info: PostgreService[0]
+      Retrieved 3 records from table 'Identity'
+warn: Microsoft.AspNetCore.HttpsPolicy.HttpsRedirectionMiddleware[3]
+      Failed to determine the https port for redirect.
+info: PostgreService[0]
+      Retrieved 4 records from table 'Contact'
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (442ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT r."Id", r."CreatedAt", r."Description", r."IncidentType", r."InvolvedAgencies", r."Notes", r."ReporterEmail", r."ReporterName", r."Timestamp", r."UpdatedAt", r."WhoReportedId"
+      FROM "Reports" AS r
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (467ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT r."Id", r."IncidentType", r."Description", r."WhoReportedId", r."Timestamp", r."InvolvedAgencies", r."Notes", r."CreatedAt", r."UpdatedAt", i."FirstName", i."LastName", i."Email"
+      FROM "Reports" AS r
+      INNER JOIN "Identity" AS i ON r."WhoReportedId" = i."Id"
+      ORDER BY r."Timestamp" DESC
+info: PostgreService[0]
+      Retrieved 3 records from table 'Identity'
+info: PostgreService[0]
+      Retrieved 3 records from table 'Identity'
+info: PostgreService[0]
+      Retrieved 3 records from table 'Identity'
+info: PostgreService[0]
+      Retrieved 3 records from table 'Identity'
+info: PostgreService[0]
+      Retrieved 3 records from table 'Identity'
+info: PostgreService[0]
+      Retrieved 4 records from table 'Contact'
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (420ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT r."Id", r."CreatedAt", r."Description", r."IncidentType", r."InvolvedAgencies", r."Notes", r."ReporterEmail", r."ReporterName", r."Timestamp", r."UpdatedAt", r."WhoReportedId"
+      FROM "Reports" AS r
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (420ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT r."Id", r."IncidentType", r."Description", r."WhoReportedId", r."Timestamp", r."InvolvedAgencies", r."Notes", r."CreatedAt", r."UpdatedAt", i."FirstName", i."LastName", i."Email"
+      FROM "Reports" AS r
+      INNER JOIN "Identity" AS i ON r."WhoReportedId" = i."Id"
+      ORDER BY r."Timestamp" DESC
+info: PostgreService[0]
+      Retrieved 3 records from table 'Identity'
+info: PostgreService[0]
+      Retrieved 3 records from table 'Identity'
+info: PostgreService[0]
+      Retrieved 3 records from table 'Identity'
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (377ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT r."Id", r."CreatedAt", r."Description", r."IncidentType", r."InvolvedAgencies", r."Notes", r."ReporterEmail", r."ReporterName", r."Timestamp", r."UpdatedAt", r."WhoReportedId"
+      FROM "Reports" AS r
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (379ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT r."Id", r."IncidentType", r."Description", r."WhoReportedId", r."Timestamp", r."InvolvedAgencies", r."Notes", r."CreatedAt", r."UpdatedAt", i."FirstName", i."LastName", i."Email"
+      FROM "Reports" AS r
+      INNER JOIN "Identity" AS i ON r."WhoReportedId" = i."Id"
+      ORDER BY r."Timestamp" DESC
+info: PostgreService[0]
+      Retrieved 4 records from table 'Contact'
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (430ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT r."Id", r."IncidentType", r."Description", r."WhoReportedId", r."Timestamp", r."InvolvedAgencies", r."Notes", r."CreatedAt", r."UpdatedAt", i."FirstName", i."LastName", i."Email"
+      FROM "Reports" AS r
+      INNER JOIN "Identity" AS i ON r."WhoReportedId" = i."Id"
+      ORDER BY r."Timestamp" DESC
+info: PostgreService[0]
+      Retrieved 4 records from table 'Contact'
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (451ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT r."Id", r."CreatedAt", r."Description", r."IncidentType", r."InvolvedAgencies", r."Notes", r."ReporterEmail", r."ReporterName", r."Timestamp", r."UpdatedAt", r."WhoReportedId"
+      FROM "Reports" AS r
+info: PostgreService[0]
+      Retrieved 3 records from table 'Identity'
+info: PostgreService[0]
+      Retrieved 4 records from table 'Contact'
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (323ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT r."Id", r."IncidentType", r."Description", r."WhoReportedId", r."Timestamp", r."InvolvedAgencies", r."Notes", r."CreatedAt", r."UpdatedAt", i."FirstName", i."LastName", i."Email"
+      FROM "Reports" AS r
+      INNER JOIN "Identity" AS i ON r."WhoReportedId" = i."Id"
+      ORDER BY r."Timestamp" DESC
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (318ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT r."Id", r."CreatedAt", r."Description", r."IncidentType", r."InvolvedAgencies", r."Notes", r."ReporterEmail", r."ReporterName", r."Timestamp", r."UpdatedAt", r."WhoReportedId"
+      FROM "Reports" AS r
+info: PostgreService[0]
+      Retrieved 3 records from table 'Identity'
+info: PostgreService[0]
+      Retrieved 3 records from table 'Identity'
+info: PostgreService[0]
+      Retrieved 3 records from table 'Identity'
+info: PostgreService[0]
+      Retrieved 4 records from table 'Contact'
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (442ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT r."Id", r."CreatedAt", r."Description", r."IncidentType", r."InvolvedAgencies", r."Notes", r."ReporterEmail", r."ReporterName", r."Timestamp", r."UpdatedAt", r."WhoReportedId"
+      FROM "Reports" AS r
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (451ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT r."Id", r."IncidentType", r."Description", r."WhoReportedId", r."Timestamp", r."InvolvedAgencies", r."Notes", r."CreatedAt", r."UpdatedAt", i."FirstName", i."LastName", i."Email"
+      FROM "Reports" AS r
+      INNER JOIN "Identity" AS i ON r."WhoReportedId" = i."Id"
+      ORDER BY r."Timestamp" DESC
+info: PostgreService[0]
+      Retrieved 3 records from table 'Identity'
+info: PostgreService[0]
+      Retrieved 3 records from table 'Identity'
+info: PostgreService[0]
+      Retrieved 4 records from table 'Contact'
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (280ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT r."Id", r."CreatedAt", r."Description", r."IncidentType", r."InvolvedAgencies", r."Notes", r."ReporterEmail", r."ReporterName", r."Timestamp", r."UpdatedAt", r."WhoReportedId"
+      FROM "Reports" AS r
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (298ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT r."Id", r."IncidentType", r."Description", r."WhoReportedId", r."Timestamp", r."InvolvedAgencies", r."Notes", r."CreatedAt", r."UpdatedAt", i."FirstName", i."LastName", i."Email"
+      FROM "Reports" AS r
+      INNER JOIN "Identity" AS i ON r."WhoReportedId" = i."Id"
+      ORDER BY r."Timestamp" DESC
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (179ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT r."Id", r."CreatedAt", r."Description", r."IncidentType", r."InvolvedAgencies", r."Notes", r."ReporterEmail", r."ReporterName", r."Timestamp", r."UpdatedAt", r."WhoReportedId"
+      FROM "Reports" AS r
+info: PostgreService[0]
+      Retrieved 4 records from table 'Contact'
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (193ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT r."Id", r."IncidentType", r."Description", r."WhoReportedId", r."Timestamp", r."InvolvedAgencies", r."Notes", r."CreatedAt", r."UpdatedAt", i."FirstName", i."LastName", i."Email"
+      FROM "Reports" AS r
+      INNER JOIN "Identity" AS i ON r."WhoReportedId" = i."Id"
+      ORDER BY r."Timestamp" DESC
+info: PostgreService[0]
+      Retrieved 3 records from table 'Identity'
+info: PostgreService[0]
+      Retrieved 3 records from table 'Identity'
+info: PostgreService[0]
+      Retrieved 3 records from table 'Identity'
+info: PostgreService[0]
+      Retrieved 3 records from table 'Identity'
+info: PostgreService[0]
+      Retrieved 4 records from table 'Contact'
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (43ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT r."Id", r."CreatedAt", r."Description", r."IncidentType", r."InvolvedAgencies", r."Notes", r."ReporterEmail", r."ReporterName", r."Timestamp", r."UpdatedAt", r."WhoReportedId"
+      FROM "Reports" AS r
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (52ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT r."Id", r."IncidentType", r."Description", r."WhoReportedId", r."Timestamp", r."InvolvedAgencies", r."Notes", r."CreatedAt", r."UpdatedAt", i."FirstName", i."LastName", i."Email"
+      FROM "Reports" AS r
+      INNER JOIN "Identity" AS i ON r."WhoReportedId" = i."Id"
+      ORDER BY r."Timestamp" DESC
+info: PostgreService[0]
+      Retrieved 3 records from table 'Identity'
+info: PostgreService[0]
+      Retrieved 3 records from table 'Identity'
+info: PostgreService[0]
+      Retrieved 3 records from table 'Identity'
+info: PostgreService[0]
+      Retrieved 3 records from table 'Identity'
+info: PostgreService[0]
+      Retrieved 4 records from table 'Contact'
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (53ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT r."Id", r."CreatedAt", r."Description", r."IncidentType", r."InvolvedAgencies", r."Notes", r."ReporterEmail", r."ReporterName", r."Timestamp", r."UpdatedAt", r."WhoReportedId"
+      FROM "Reports" AS r
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (99ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT r."Id", r."IncidentType", r."Description", r."WhoReportedId", r."Timestamp", r."InvolvedAgencies", r."Notes", r."CreatedAt", r."UpdatedAt", i."FirstName", i."LastName", i."Email"
+      FROM "Reports" AS r
+      INNER JOIN "Identity" AS i ON r."WhoReportedId" = i."Id"
+      ORDER BY r."Timestamp" DESC
+info: Microsoft.Hosting.Lifetime[0]
+      Application is shutting down...
