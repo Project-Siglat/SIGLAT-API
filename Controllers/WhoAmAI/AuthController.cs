@@ -158,5 +158,54 @@ namespace SIGLATAPI.Controllers.WhoAmI
             var token = tokenHandler.CreateToken(tokenDescriptor);
             return tokenHandler.WriteToken(token);
         }
+
+        [HttpGet("profile")]
+        public async Task<IActionResult> GetProfile()
+        {
+            try
+            {
+                var jtiClaim = User.FindFirst(JwtRegisteredClaimNames.Jti)?.Value;
+                if (string.IsNullOrEmpty(jtiClaim))
+                {
+                    return Unauthorized("Invalid token");
+                }
+
+                if (!Guid.TryParse(jtiClaim, out Guid userId))
+                {
+                    return Unauthorized("Invalid user ID in token");
+                }
+
+                var userProfile = await _db.GetDataByColumnAsync<IdentityDto>("Identity", "Id", userId);
+                var user = userProfile.FirstOrDefault();
+                
+                if (user == null)
+                {
+                    return NotFound("User not found");
+                }
+
+                // Return user profile without sensitive data
+                var profileResponse = new
+                {
+                    Id = user.Id,
+                    FirstName = user.FirstName,
+                    MiddleName = user.MiddleName,
+                    LastName = user.LastName,
+                    Email = user.Email,
+                    PhoneNumber = user.PhoneNumber,
+                    Address = user.Address,
+                    Gender = user.Gender,
+                    DateOfBirth = user.DateOfBirth,
+                    Role = user.Role,
+                    CreatedAt = user.CreatedAt,
+                    UpdatedAt = user.UpdatedAt
+                };
+
+                return Ok(profileResponse);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Error retrieving profile: {ex.Message}");
+            }
+        }
     }
 }
