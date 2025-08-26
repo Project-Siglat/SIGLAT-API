@@ -331,5 +331,103 @@ namespace SIGLATAPI.Controllers.WhoAmI
             await _db.PostDataAsync<ContactDto>("Contact", Contact, Contact.Id);
             return Ok(Contact);
         }
+
+        [HttpGet("profile")]
+        [Authorize]
+        public async Task<IActionResult> GetProfile()
+        {
+            try
+            {
+                // Get the current user ID from the JWT token
+                var userIdClaim = User.FindFirst(JwtRegisteredClaimNames.Jti)?.Value ?? 
+                                 User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? 
+                                 User.FindFirst("nameid")?.Value ?? 
+                                 User.FindFirst("sub")?.Value;
+                
+                if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
+                {
+                    return BadRequest(new { message = "Invalid user ID in token" });
+                }
+
+                var user = await _db.GetSingleDataAsync<IdentityDto>("Identity", userId);
+                if (user == null)
+                {
+                    return NotFound(new { message = "User not found" });
+                }
+
+                // Return sanitized profile data
+                var profile = new 
+                {
+                    user.Id,
+                    user.FirstName,
+                    user.LastName,
+                    user.Email,
+                    user.PhoneNumber,
+                    user.Role,
+                    Department = "Emergency Response System", // Static for now
+                    Location = "Villaverde, Nueva Vizcaya"     // Static for now
+                };
+
+                return Ok(profile);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Failed to retrieve profile", error = ex.Message });
+            }
+        }
+
+        [HttpPut("profile")]
+        [Authorize]
+        public async Task<IActionResult> UpdateProfile([FromBody] ProfileDto profileData)
+        {
+            try
+            {
+                // Get the current user ID from the JWT token
+                var userIdClaim = User.FindFirst(JwtRegisteredClaimNames.Jti)?.Value ?? 
+                                 User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? 
+                                 User.FindFirst("nameid")?.Value ?? 
+                                 User.FindFirst("sub")?.Value;
+                
+                if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
+                {
+                    return BadRequest(new { message = "Invalid user ID in token" });
+                }
+
+                var existingUser = await _db.GetSingleDataAsync<IdentityDto>("Identity", userId);
+                if (existingUser == null)
+                {
+                    return NotFound(new { message = "User not found" });
+                }
+
+                // Update only the profile fields that are allowed to be changed
+                existingUser.FirstName = profileData.FirstName;
+                existingUser.LastName = profileData.LastName;
+                existingUser.Email = profileData.Email;
+                existingUser.PhoneNumber = profileData.PhoneNumber;
+                existingUser.UpdatedAt = DateTime.UtcNow;
+
+                // Save the updated user
+                await _db.PostDataAsync<IdentityDto>("Identity", existingUser, existingUser.Id);
+
+                // Return updated profile data
+                var updatedProfile = new 
+                {
+                    existingUser.Id,
+                    existingUser.FirstName,
+                    existingUser.LastName,
+                    existingUser.Email,
+                    existingUser.PhoneNumber,
+                    existingUser.Role,
+                    Department = profileData.Department ?? "Emergency Response System",
+                    Location = profileData.Location ?? "Villaverde, Nueva Vizcaya"
+                };
+
+                return Ok(updatedProfile);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Failed to update profile", error = ex.Message });
+            }
+        }
     }
 }
