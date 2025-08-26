@@ -10,6 +10,9 @@ using System.Text;
 
 namespace SIGLATAPI.Controllers.WhoAmI
 {
+    /// <summary>
+    /// Admin controller for system administration and user management
+    /// </summary>
     [ApiController]
     [ApiVersion("1.0")]
     [Authorize]
@@ -26,6 +29,13 @@ namespace SIGLATAPI.Controllers.WhoAmI
 
         }
 
+        /// <summary>
+        /// Get list of all users in the system (Admin only)
+        /// </summary>
+        /// <returns>List of all users with sanitized data (no passwords)</returns>
+        /// <response code="200">Users retrieved successfully</response>
+        /// <response code="401">Unauthorized - Admin role required</response>
+        /// <response code="500">Internal server error</response>
         [HttpGet("userlist")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> UserList()

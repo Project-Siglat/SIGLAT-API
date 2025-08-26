@@ -10,6 +10,14 @@ using System.Text;
 
 namespace SIGLATAPI.Controllers.WhoAmI
 {
+    /// <summary>
+    /// Authentication controller for user registration, login, and profile management
+    /// </summary>
+    /// <remarks>
+    /// This controller handles user authentication processes including new user registration,
+    /// login with JWT token generation, and authenticated profile retrieval. It also manages
+    /// login logging for security auditing purposes.
+    /// </remarks>
     [ApiController]
     [ApiVersion("1.0")]
     [Authorize]
@@ -26,6 +34,13 @@ namespace SIGLATAPI.Controllers.WhoAmI
 
         }
 
+        /// <summary>
+        /// Register a new user account
+        /// </summary>
+        /// <param name="request">User registration details including personal information and credentials</param>
+        /// <returns>Success message or error details</returns>
+        /// <response code="200">Registration successful</response>
+        /// <response code="400">Registration failed - email already exists or validation error</response>
         [HttpPost("register")]
         [AllowAnonymous]
         public async Task<IActionResult> Register([FromBody] RegisterDto request)
@@ -82,6 +97,14 @@ namespace SIGLATAPI.Controllers.WhoAmI
             }
         }
 
+        /// <summary>
+        /// Authenticate user and obtain access token
+        /// </summary>
+        /// <param name="request">User email and password credentials</param>
+        /// <returns>JWT token and user role information</returns>
+        /// <response code="200">Login successful - returns JWT token and user role</response>
+        /// <response code="400">Invalid credentials</response>
+        /// <response code="404">User not found</response>
         [HttpPost("login")]
         [AllowAnonymous]
         public async Task<IActionResult> Login([FromBody] AuthDto request)
@@ -159,6 +182,14 @@ namespace SIGLATAPI.Controllers.WhoAmI
             return tokenHandler.WriteToken(token);
         }
 
+        /// <summary>
+        /// Get current authenticated user's profile information
+        /// </summary>
+        /// <returns>User profile data without sensitive information</returns>
+        /// <response code="200">Profile retrieved successfully</response>
+        /// <response code="401">Invalid or missing authentication token</response>
+        /// <response code="404">User not found</response>
+        /// <response code="500">Internal server error</response>
         [HttpGet("profile")]
         public async Task<IActionResult> GetProfile()
         {

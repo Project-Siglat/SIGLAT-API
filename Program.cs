@@ -39,7 +39,7 @@ builder.Services.AddCors(options =>
     options.AddPolicy(name: Origin,
                       policy =>
                       {
-                           policy.WithOrigins("http://localhost:8080", "http://localhost:5050", "http://localhost:3000", "http://localhost:3001", "https://siglatdev.craftmatrix.org", "https://siglat.craftmatrix.org")
+                            policy.WithOrigins("http://localhost:8080", "http://localhost:5050", "http://localhost:3000", "http://localhost:3001", "http://localhost:5173", "https://siglatdev.craftmatrix.org", "https://siglat.craftmatrix.org")
                                 .AllowAnyHeader()
                                 .AllowAnyMethod()
                                 .AllowCredentials();
@@ -66,10 +66,22 @@ builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo
     {
-        Title = "Siglat API",
-        Version = "v1",
-        Description = "API Version 1.0"
+        Title = "SIGLAT API - Emergency Response System",
+        Version = "v1.0",
+        Description = "Comprehensive API for emergency response management including user authentication, incident reporting, real-time communication, and multi-agency coordination.",
+        Contact = new OpenApiContact
+        {
+            Name = "Craftmatrix24",
+            Email = "support@craftmatrix.org",
+            Url = new Uri("https://github.com/Craftmatrix24")
+        },
+        License = new OpenApiLicense
+        {
+            Name = "ISC License",
+            Url = new Uri("https://opensource.org/licenses/ISC")
+        }
     });
+    
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Description = "JWT Authorization header using the Bearer scheme. Example: \"Bearer {token}\"",
@@ -78,6 +90,7 @@ builder.Services.AddSwaggerGen(c =>
         Type = SecuritySchemeType.ApiKey,
         Scheme = "Bearer"
     });
+    
     c.AddSecurityRequirement(new OpenApiSecurityRequirement{
     {
         new OpenApiSecurityScheme{
@@ -88,7 +101,6 @@ builder.Services.AddSwaggerGen(c =>
             Scheme = "Bearer",
             Name = "Bearer",
             In = ParameterLocation.Header,
-
         },
         new string[]{}
     }});
@@ -96,8 +108,14 @@ builder.Services.AddSwaggerGen(c =>
     // Set the comments path for the Swagger JSON and UI.
     var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
     var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
-
-    c.IncludeXmlComments(xmlPath);
+    
+    if (File.Exists(xmlPath))
+    {
+        c.IncludeXmlComments(xmlPath);
+    }
+    
+    // Enable annotations for better documentation
+    c.EnableAnnotations();
 });
 
 builder.Services.AddControllers();
