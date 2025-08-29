@@ -33,7 +33,6 @@ builder.Services.AddDbContext<AppDBContext>((serviceProvider, options) =>
 });
 
 builder.Services.AddHostedService<DatabaseInitializer>();
-builder.Services.AddHostedService<AdminInitializationService>();
 builder.Services.AddCors(options =>
 {
     options.AddPolicy(name: Origin,
