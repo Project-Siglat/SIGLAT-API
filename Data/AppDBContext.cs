@@ -15,6 +15,7 @@ namespace Craftmatrix.org.API.Data
         public DbSet<CoordinatesDto> Coordinates { get; set; }
         public DbSet<VerificationDto> Verifications { get; set; }
         public DbSet<VerificationLogsDto> VerificationLogs { get; set; }
+        public DbSet<ContactVerificationTokenDto> ContactVerificationTokens { get; set; }
         public DbSet<AlertDto> Alerts { get; set; }
         public DbSet<ContactDto> Contact { get; set; }
         public DbSet<ChatDto> Chat { get; set; }
@@ -57,6 +58,13 @@ namespace Craftmatrix.org.API.Data
                 .WithMany()
                 .HasForeignKey(vl => vl.AdminUserId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            // ContactVerificationTokens -> Identity relationship
+            modelBuilder.Entity<ContactVerificationTokenDto>()
+                .HasOne(cvt => cvt.Identity)
+                .WithMany()
+                .HasForeignKey(cvt => cvt.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
 
             // Report -> Identity relationship
             modelBuilder.Entity<ReportDto>()

@@ -66,6 +66,8 @@ namespace Craftmatrix.org.API.Controllers.Authentication
                     DateOfBirth = request.DateOfBirth,
                     Email = request.Email,
                     RoleId = 2, // Set default role to "User"
+                    IsEmailVerified = false,
+                    IsPhoneVerified = false,
                     HashPass = PasswordService.HashPassword(request.HashPass),
                     CreatedAt = DateTime.UtcNow,
                     UpdatedAt = DateTime.UtcNow
@@ -84,6 +86,10 @@ namespace Craftmatrix.org.API.Controllers.Authentication
                     identity.Gender,
                     identity.PhoneNumber,
                     identity.Email,
+                    identity.IsEmailVerified,
+                    identity.IsPhoneVerified,
+                    EmailVerifiedAt = (DateTime?)null,
+                    PhoneVerifiedAt = (DateTime?)null,
                     identity.HashPass,
                     identity.CreatedAt,
                     identity.UpdatedAt
@@ -233,6 +239,10 @@ namespace Craftmatrix.org.API.Controllers.Authentication
                     Gender = user.Gender,
                     DateOfBirth = user.DateOfBirth,
                     Role = user.Role,
+                    IsEmailVerified = user.IsEmailVerified,
+                    EmailVerifiedAt = user.EmailVerifiedAt,
+                    IsPhoneVerified = user.IsPhoneVerified,
+                    PhoneVerifiedAt = user.PhoneVerifiedAt,
                     CreatedAt = user.CreatedAt,
                     UpdatedAt = user.UpdatedAt
                 };
@@ -242,6 +252,253 @@ namespace Craftmatrix.org.API.Controllers.Authentication
             catch (Exception ex)
             {
                 return StatusCode(500, $"Error retrieving profile: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Send verification code to email or phone number
+        /// </summary>
+        /// <param name="request">Contact verification request</param>
+        /// <returns>Success message with expiration time</returns>
+        [HttpPost("send-verification-code")]
+        public async Task<IActionResult> SendVerificationCode([FromBody] SendVerificationCodeDto request)
+        {
+            try
+            {
+                // Get current user ID from the token
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out Guid userId))
+                {
+                    return Unauthorized(new { message = "Invalid user token" });
+                }
+
+                // Validate verification type
+                if (!ContactVerificationType.IsValidType(request.VerificationType))
+                {
+                    return BadRequest(new { message = "Invalid verification type. Must be 'email' or 'phone'" });
+                }
+
+                // Get user to verify the contact matches their profile
+                var user = await _db.GetSingleDataAsync<IdentityDto>("Identity", userId);
+                if (user == null)
+                {
+                    return NotFound(new { message = "User not found" });
+                }
+
+                // Verify the contact value matches user's profile
+                bool contactMatches = request.VerificationType.ToLower() switch
+                {
+                    "email" => user.Email.Equals(request.ContactValue, StringComparison.OrdinalIgnoreCase),
+                    "phone" => user.PhoneNumber.Equals(request.ContactValue),
+                    _ => false
+                };
+
+                if (!contactMatches)
+                {
+                    return BadRequest(new { message = "Contact value does not match your profile" });
+                }
+
+                // Check if already verified
+                bool isAlreadyVerified = request.VerificationType.ToLower() switch
+                {
+                    "email" => user.IsEmailVerified,
+                    "phone" => user.IsPhoneVerified,
+                    _ => false
+                };
+
+                if (isAlreadyVerified)
+                {
+                    return BadRequest(new { message = $"{request.VerificationType} is already verified" });
+                }
+
+                // Check for recent unused tokens
+                var recentTokens = await _db.GetDataAsync<ContactVerificationTokenDto>("ContactVerificationTokens");
+                var existingToken = recentTokens.FirstOrDefault(t => 
+                    t.UserId == userId && 
+                    t.VerificationType == request.VerificationType.ToLower() && 
+                    !t.IsUsed && 
+                    t.ExpiresAt > DateTime.UtcNow &&
+                    t.CreatedAt > DateTime.UtcNow.AddMinutes(-2)); // Don't allow new codes within 2 minutes
+
+                if (existingToken != null)
+                {
+                    var remainingTime = existingToken.ExpiresAt.Subtract(DateTime.UtcNow);
+                    return BadRequest(new { 
+                        message = "A verification code was recently sent. Please wait before requesting a new one.",
+                        retryAfter = remainingTime.TotalSeconds
+                    });
+                }
+
+                // Generate 6-digit verification code
+                var random = new Random();
+                var verificationCode = random.Next(100000, 999999).ToString();
+
+                // Create verification token
+                var token = new ContactVerificationTokenDto
+                {
+                    UserId = userId,
+                    VerificationType = request.VerificationType.ToLower(),
+                    ContactValue = request.ContactValue,
+                    VerificationCode = verificationCode,
+                    ExpiresAt = DateTime.UtcNow.AddMinutes(10), // 10 minutes expiration
+                    IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString(),
+                    UserAgent = HttpContext.Request.Headers["User-Agent"].ToString()
+                };
+
+                await _db.PostDataAsync<ContactVerificationTokenDto>("ContactVerificationTokens", token, token.Id);
+
+                // TODO: In a real implementation, send the code via email or SMS
+                // For development, we'll return the code in the response
+                return Ok(new
+                {
+                    message = $"Verification code sent to your {request.VerificationType}",
+                    expiresAt = token.ExpiresAt,
+                    // Remove this in production - only for development
+                    verificationCode = verificationCode
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Failed to send verification code", error = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Verify email or phone number with verification code
+        /// </summary>
+        /// <param name="request">Verification code request</param>
+        /// <returns>Verification success message</returns>
+        [HttpPost("verify-contact")]
+        public async Task<IActionResult> VerifyContact([FromBody] VerifyContactCodeDto request)
+        {
+            try
+            {
+                // Get current user ID from the token
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out Guid userId))
+                {
+                    return Unauthorized(new { message = "Invalid user token" });
+                }
+
+                // Validate verification type
+                if (!ContactVerificationType.IsValidType(request.VerificationType))
+                {
+                    return BadRequest(new { message = "Invalid verification type. Must be 'email' or 'phone'" });
+                }
+
+                // Find the verification token
+                var tokens = await _db.GetDataAsync<ContactVerificationTokenDto>("ContactVerificationTokens");
+                var token = tokens.FirstOrDefault(t => 
+                    t.UserId == userId && 
+                    t.VerificationType == request.VerificationType.ToLower() && 
+                    t.ContactValue == request.ContactValue &&
+                    !t.IsUsed &&
+                    t.ExpiresAt > DateTime.UtcNow);
+
+                if (token == null)
+                {
+                    return BadRequest(new { message = "Invalid or expired verification code" });
+                }
+
+                // Check attempt count to prevent brute force
+                if (token.AttemptCount >= 5)
+                {
+                    return BadRequest(new { message = "Too many verification attempts. Please request a new code." });
+                }
+
+                // Verify the code
+                if (token.VerificationCode != request.VerificationCode)
+                {
+                    // Increment attempt count
+                    token.AttemptCount++;
+                    await _db.PostDataAsync<ContactVerificationTokenDto>("ContactVerificationTokens", token, token.Id);
+                    
+                    return BadRequest(new { 
+                        message = "Invalid verification code",
+                        attemptsRemaining = Math.Max(0, 5 - token.AttemptCount)
+                    });
+                }
+
+                // Mark token as used
+                token.IsUsed = true;
+                token.VerifiedAt = DateTime.UtcNow;
+                await _db.PostDataAsync<ContactVerificationTokenDto>("ContactVerificationTokens", token, token.Id);
+
+                // Update user verification status
+                var user = await _db.GetSingleDataAsync<IdentityDto>("Identity", userId);
+                if (user == null)
+                {
+                    return NotFound(new { message = "User not found" });
+                }
+
+                if (request.VerificationType.ToLower() == "email")
+                {
+                    user.IsEmailVerified = true;
+                    user.EmailVerifiedAt = DateTime.UtcNow;
+                }
+                else if (request.VerificationType.ToLower() == "phone")
+                {
+                    user.IsPhoneVerified = true;
+                    user.PhoneVerifiedAt = DateTime.UtcNow;
+                }
+
+                user.UpdatedAt = DateTime.UtcNow;
+                await _db.PostDataAsync<IdentityDto>("Identity", user, user.Id);
+
+                return Ok(new
+                {
+                    message = $"{request.VerificationType} verified successfully",
+                    verifiedAt = DateTime.UtcNow,
+                    verificationType = request.VerificationType
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Failed to verify contact", error = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Get verification status for the current user
+        /// </summary>
+        /// <returns>Verification status for email and phone</returns>
+        [HttpGet("verification-status")]
+        public async Task<IActionResult> GetVerificationStatus()
+        {
+            try
+            {
+                // Get current user ID from the token
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out Guid userId))
+                {
+                    return Unauthorized(new { message = "Invalid user token" });
+                }
+
+                var user = await _db.GetSingleDataAsync<IdentityDto>("Identity", userId);
+                if (user == null)
+                {
+                    return NotFound(new { message = "User not found" });
+                }
+
+                return Ok(new
+                {
+                    email = new
+                    {
+                        value = user.Email,
+                        isVerified = user.IsEmailVerified,
+                        verifiedAt = user.EmailVerifiedAt
+                    },
+                    phone = new
+                    {
+                        value = user.PhoneNumber,
+                        isVerified = user.IsPhoneVerified,
+                        verifiedAt = user.PhoneVerifiedAt
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Failed to get verification status", error = ex.Message });
             }
         }
     }

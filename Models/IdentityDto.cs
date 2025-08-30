@@ -27,6 +27,10 @@ namespace Craftmatrix.org.API.Models
         [Phone]
         public string PhoneNumber { get; set; }
         
+        public bool IsPhoneVerified { get; set; } = false;
+        
+        public DateTime? PhoneVerifiedAt { get; set; }
+        
         [Required]
         public int RoleId { get; set; }
         
@@ -39,6 +43,10 @@ namespace Craftmatrix.org.API.Models
         [Required]
         [EmailAddress]
         public string Email { get; set; }
+        
+        public bool IsEmailVerified { get; set; } = false;
+        
+        public DateTime? EmailVerifiedAt { get; set; }
         
         [Required]
         [MinLength(6)]

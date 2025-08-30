@@ -58,6 +58,10 @@ namespace Craftmatrix.org.API.Controllers.WhoAmI
                     user.Gender,
                     user.DateOfBirth,
                     user.Address,
+                    user.IsEmailVerified,
+                    user.EmailVerifiedAt,
+                    user.IsPhoneVerified,
+                    user.PhoneVerifiedAt,
                     user.CreatedAt,
                     user.UpdatedAt
                 }).OrderByDescending(u => u.CreatedAt);
