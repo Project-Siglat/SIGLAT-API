@@ -1,9 +1,11 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
-using SIGLAT.API.Model;
-using Craftmatrix.org.Model;
+using Rai.SIGLAT.API.Models;
+using Rai.SIGLAT.API.Services;
+using Rai.SIGLAT.API.Models;
+using Rai.SIGLAT.API.Services;
 
-namespace SIGLAT.API.Controllers.Ambulance
+namespace Rai.SIGLAT.API.Controllers.Ambulance
 {
     /// <summary>
     /// Controller for managing chat functionality and communication between users and emergency responders

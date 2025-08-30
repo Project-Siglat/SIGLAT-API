@@ -1,7 +1,7 @@
 using System.Net;
 using System.Text.Json;
 
-namespace SIGLATAPI.Middleware
+namespace Rai.SIGLAT.API.Middleware
 {
     public class ErrorHandlingMiddleware
     {

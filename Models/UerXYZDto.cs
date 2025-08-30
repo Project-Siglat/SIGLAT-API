@@ -1,4 +1,4 @@
-namespace SIGLAT.API.Model
+namespace Rai.SIGLAT.API.Models
 {
     public class UserXYZDto
     {

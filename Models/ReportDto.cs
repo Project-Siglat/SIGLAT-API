@@ -1,7 +1,7 @@
 using System;
 using System.ComponentModel.DataAnnotations;
 
-namespace Craftmatrix.org.Model
+namespace Rai.SIGLAT.API.Models
 {
     public class ReportDto
     {

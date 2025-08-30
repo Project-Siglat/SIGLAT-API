@@ -1,13 +1,14 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
-using Craftmatrix.org.Model;
-using Craftmatrix.Codex.org.Service;
+using Rai.SIGLAT.API.Models;
+using Rai.SIGLAT.API.Services;
+using Rai.SIGLAT.API.Services;
 using System.Security.Claims;
 using Microsoft.EntityFrameworkCore;
-using Craftmatrix.org.Data;
+using Rai.SIGLAT.API.Data;
 using System.IdentityModel.Tokens.Jwt;
 
-namespace SIGLATAPI.Controllers.Reports
+namespace Rai.SIGLAT.API.Controllers.Reports
 {
     /// <summary>
     /// Controller for managing emergency incident reports in the SIGLAT system

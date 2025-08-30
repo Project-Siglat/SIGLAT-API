@@ -9,7 +9,9 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
-public class PostgreService : IPostgreService
+namespace Rai.SIGLAT.API.Services
+{
+    public class PostgreService : IPostgreService
 {
     private readonly string _connectionString;
     private readonly string _databaseName;
@@ -404,5 +406,6 @@ public class PostgreService : IPostgreService
             throw new InvalidOperationException($"Environment variable '{name}' is not set or is empty.");
         }
         return value;
+    }
     }
 }

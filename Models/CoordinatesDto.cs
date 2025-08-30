@@ -1,4 +1,4 @@
-namespace Craftmatrix.org.Model
+namespace Rai.SIGLAT.API.Models
 {
     public class CoordinatesDto
     {

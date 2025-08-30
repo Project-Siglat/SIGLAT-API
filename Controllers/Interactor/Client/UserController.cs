@@ -1,8 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
-using SIGLAT.API.Model;
+using Rai.SIGLAT.API.Models;
+using Rai.SIGLAT.API.Services;
 
-namespace SIGLAT.API.Controllers.Client
+namespace Rai.SIGLAT.API.Controllers.Client
 {
     /// <summary>
     /// Controller for managing user-specific operations and location tracking

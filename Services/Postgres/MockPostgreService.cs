@@ -1,6 +1,9 @@
 using Microsoft.Extensions.Logging;
+using Rai.SIGLAT.API.Services;
 
-public class MockPostgreService : IPostgreService
+namespace Rai.SIGLAT.API.Services
+{
+    public class MockPostgreService : IPostgreService
 {
     private readonly ILogger<MockPostgreService> _logger;
 
@@ -60,5 +63,6 @@ public class MockPostgreService : IPostgreService
     {
         _logger.LogWarning($"Mock DeleteDataAsync called for table: {tableName}, id: {id}");
         return Task.FromResult(true);
+    }
     }
 }

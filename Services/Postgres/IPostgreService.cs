@@ -1,7 +1,9 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-public interface IPostgreService
+namespace Rai.SIGLAT.API.Services
+{
+    public interface IPostgreService
 {
     /// <summary>
     /// Checks if the PostgreSQL connection is active.
@@ -68,5 +70,6 @@ public interface IPostgreService
     /// <param name="tableName">The name of the table</param>
     /// <param name="id">The ID of the record to delete</param>
     /// <returns>True if deletion was successful, false if record not found</returns>
-    Task<bool> DeleteDataAsync(string tableName, object id);
+        Task<bool> DeleteDataAsync(string tableName, object id);
+    }
 }

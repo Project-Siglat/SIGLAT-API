@@ -1,4 +1,4 @@
-namespace Craftmatrix.Codex.org.Service
+namespace Rai.SIGLAT.API.Services
 {
 
     public class PasswordService

@@ -1,8 +1,10 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
-using SIGLAT.API.Model;
-using Craftmatrix.org.Model;
-namespace SIGLAT.API.Controllers.Ambulance
+using Rai.SIGLAT.API.Models;
+using Rai.SIGLAT.API.Services;
+using Rai.SIGLAT.API.Models;
+using Rai.SIGLAT.API.Services;
+namespace Rai.SIGLAT.API.Controllers.Ambulance
 {
     /// <summary>
     /// Controller for ambulance service management and emergency medical response coordination

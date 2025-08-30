@@ -1,14 +1,15 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
-using Craftmatrix.org.Model;
-using Craftmatrix.Codex.org.Service;
+using Rai.SIGLAT.API.Models;
+using Rai.SIGLAT.API.Services;
+using Rai.SIGLAT.API.Services;
 using System.Security.Claims;
 using System.Text.Json;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Text;
 
-namespace SIGLATAPI.Controllers.WhoAmI
+namespace Rai.SIGLAT.API.Controllers.WhoAmI
 {
     /// <summary>
     /// Admin controller for system administration and user management

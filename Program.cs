@@ -1,4 +1,4 @@
-using Craftmatrix.org.Data;
+using Rai.SIGLAT.API.Data;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -7,8 +7,8 @@ using dotenv.net;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc;
 using System.Reflection;
-using SIGLATAPI.Middleware;
-using SIGLATAPI.Services;
+using Rai.SIGLAT.API.Middleware;
+using Rai.SIGLAT.API.Services;
 
 DotEnv.Load();
 var Origin = "_Origin";
