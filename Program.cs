@@ -38,10 +38,10 @@ builder.Services.AddCors(options =>
     options.AddPolicy(name: Origin,
                       policy =>
                       {
-                            policy.WithOrigins("http://localhost:8080", "http://localhost:5050", "http://localhost:3000", "http://localhost:3001", "http://localhost:5173", "https://siglatdev.craftmatrix.org", "https://siglat.craftmatrix.org")
-                                .AllowAnyHeader()
-                                .AllowAnyMethod()
-                                .AllowCredentials();
+                          policy.WithOrigins("http://localhost:8080", "http://localhost:5050", "http://localhost:3000", "http://localhost:3001", "http://localhost:5173", "https://siglatdev.craftmatrix.org", "https://siglat.craftmatrix.org")
+                              .AllowAnyHeader()
+                              .AllowAnyMethod()
+                              .AllowCredentials();
                       });
 });
 
@@ -80,7 +80,7 @@ builder.Services.AddSwaggerGen(c =>
             Url = new Uri("https://opensource.org/licenses/ISC")
         }
     });
-    
+
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Description = "JWT Authorization header using the Bearer scheme. Example: \"Bearer {token}\"",
@@ -89,7 +89,7 @@ builder.Services.AddSwaggerGen(c =>
         Type = SecuritySchemeType.ApiKey,
         Scheme = "Bearer"
     });
-    
+
     c.AddSecurityRequirement(new OpenApiSecurityRequirement{
     {
         new OpenApiSecurityScheme{
@@ -107,12 +107,12 @@ builder.Services.AddSwaggerGen(c =>
     // Set the comments path for the Swagger JSON and UI.
     var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
     var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
-    
+
     if (File.Exists(xmlPath))
     {
         c.IncludeXmlComments(xmlPath);
     }
-    
+
     // Enable annotations for better documentation
     // c.EnableAnnotations();
 });
