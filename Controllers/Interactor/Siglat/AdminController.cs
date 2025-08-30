@@ -121,9 +121,10 @@ namespace Craftmatrix.org.API.Controllers.WhoAmI
                 }
                 
                 // Prevent deleting the last admin
-                if (existingUser.Role == "Admin")
+                if (existingUser.RoleId == 1) // Admin role ID
                 {
-                    var adminCount = (await _db.GetDataByColumnAsync<IdentityDto>("Identity", "Role", "Admin")).Count();
+                    var allUsers = await _db.GetDataAsync<IdentityDto>("Identity");
+                    var adminCount = allUsers.Count(u => u.RoleId == 1);
                     if (adminCount <= 1)
                     {
                         return BadRequest(new { message = "Cannot delete the last admin user" });
@@ -218,21 +219,22 @@ namespace Craftmatrix.org.API.Controllers.WhoAmI
                 }
                 
                 // Prevent removing admin role from the last admin
-                if (existingUser.Role == "Admin" && roleUpdate.Role != "Admin")
+                if (existingUser.RoleId == 1 && roleUpdate.RoleId != 1) // Admin role ID
                 {
-                    var adminCount = (await _db.GetDataByColumnAsync<IdentityDto>("Identity", "Role", "Admin")).Count();
+                    var allUsers = await _db.GetDataAsync<IdentityDto>("Identity");
+                    var adminCount = allUsers.Count(u => u.RoleId == 1);
                     if (adminCount <= 1)
                     {
                         return BadRequest(new { message = "Cannot remove admin role from the last admin user" });
                     }
                 }
                 
-                existingUser.Role = roleUpdate.Role;
+                existingUser.RoleId = roleUpdate.RoleId;
                 existingUser.UpdatedAt = DateTime.UtcNow;
                 
                 await _db.PostDataAsync<IdentityDto>("Identity", existingUser, existingUser.Id);
                 
-                return Ok(new { message = "User role updated successfully", role = roleUpdate.Role });
+                return Ok(new { message = "User role updated successfully", roleId = roleUpdate.RoleId });
             }
             catch (Exception ex)
             {

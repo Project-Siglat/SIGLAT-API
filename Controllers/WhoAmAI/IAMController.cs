@@ -111,7 +111,7 @@ namespace Craftmatrix.org.API.Controllers.WhoAmI
             user.Address = identityDto.Address;
             user.Gender = identityDto.Gender;
             user.PhoneNumber = identityDto.PhoneNumber;
-            user.Role = identityDto.Role;
+            user.RoleId = identityDto.RoleId;
             user.DateOfBirth = identityDto.DateOfBirth;
             user.Email = identityDto.Email;
             user.UpdatedAt = DateTime.UtcNow;
@@ -198,7 +198,7 @@ namespace Craftmatrix.org.API.Controllers.WhoAmI
                                     string.IsNullOrEmpty(me.Address) ||
                                     string.IsNullOrEmpty(me.Gender) ||
                                     string.IsNullOrEmpty(me.PhoneNumber) ||
-                                    string.IsNullOrEmpty(me.Role) ||
+                                     me.RoleId == 0 ||
                                     me.DateOfBirth == DateTime.MinValue ||
                                     string.IsNullOrEmpty(me.Email) ||
                                     string.IsNullOrEmpty(me.HashPass) ||

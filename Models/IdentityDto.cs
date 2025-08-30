@@ -27,7 +27,11 @@ namespace Craftmatrix.org.API.Models
         [Phone]
         public string PhoneNumber { get; set; }
         
-        public string Role { get; set; } // Made optional for registration
+        [Required]
+        public int RoleId { get; set; }
+        
+        // Navigation property
+        public virtual RoleDto Role { get; set; }
         
         [Required]
         public DateTime DateOfBirth { get; set; }

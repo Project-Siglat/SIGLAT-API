@@ -39,7 +39,7 @@ namespace Craftmatrix.org.API.Controllers.Ambulance
         public async Task<IActionResult> GetContactableAmbulances()
         {
             var ambulances = await _db.GetDataAsync<IdentityDto>("Identity");
-            var contactableAmbulances = ambulances.Where(a => a.Role == "Ambulance").ToList();
+            var contactableAmbulances = ambulances.Where(a => a.RoleId == 3).ToList(); // Ambulance role ID
             return Ok(contactableAmbulances);
         }
 
@@ -53,7 +53,7 @@ namespace Craftmatrix.org.API.Controllers.Ambulance
         public async Task<IActionResult> GetContactableUsers()
         {
             var users = await _db.GetDataAsync<IdentityDto>("Identity");
-            var contactableUsers = users.Where(u => u.Role == "User").ToList();
+            var contactableUsers = users.Where(u => u.RoleId == 2).ToList(); // User role ID
             return Ok(contactableUsers);
         }
 
@@ -79,7 +79,7 @@ namespace Craftmatrix.org.API.Controllers.Ambulance
             var tokenData = jsonToken.Payload.Jti;
 
             chat.Id = Guid.NewGuid();
-            chat.Sender = Guid.Parse(tokenData);
+            chat.SenderId = Guid.Parse(tokenData);
             chat.SentAt = DateTime.UtcNow;
             await _db.PostDataAsync<ChatDto>("Chat", chat, chat.Id);
             return Ok();

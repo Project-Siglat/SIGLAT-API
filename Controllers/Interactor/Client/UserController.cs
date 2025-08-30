@@ -42,15 +42,16 @@ namespace Craftmatrix.org.API.Controllers.Client
         /// <response code="500">Internal server error occurred while updating coordinates</response>
         [HttpPost("coordinates")]
         // [AllowAnonymous]
-        public async Task<IActionResult> Get([FromBody] UserXYZDto user)
+        public async Task<IActionResult> Get([FromBody] CoordinatesDto coordinates)
         {
             var token = HttpContext.Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
             var handler = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler();
             var jsonToken = handler.ReadToken(token) as System.IdentityModel.Tokens.Jwt.JwtSecurityToken;
             var tokenData = jsonToken.Payload.Jti;
 
-            user.Id = Guid.Parse(tokenData);
-            await _db.PostDataAsync<UserXYZDto>("UserXYZ", user, user.Id);
+            coordinates.Id = Guid.Parse(tokenData);
+            coordinates.UserId = Guid.Parse(tokenData);
+            await _db.PostDataAsync<CoordinatesDto>("Coordinates", coordinates, coordinates.Id);
             return Ok("Success");
         }
     }

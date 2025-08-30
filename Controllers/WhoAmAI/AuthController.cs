@@ -65,7 +65,7 @@ namespace Craftmatrix.org.API.Controllers.Authentication
                     PhoneNumber = request.PhoneNumber,
                     DateOfBirth = request.DateOfBirth,
                     Email = request.Email,
-                    Role = "User", // Set default role
+                    RoleId = 2, // Set default role to "User"
                     HashPass = PasswordService.HashPassword(request.HashPass),
                     CreatedAt = DateTime.UtcNow,
                     UpdatedAt = DateTime.UtcNow
@@ -79,7 +79,7 @@ namespace Craftmatrix.org.API.Controllers.Authentication
                     identity.MiddleName,
                     identity.LastName,
                     identity.Address,
-                    identity.Role,
+                    identity.RoleId,
                     identity.DateOfBirth,
                     identity.Gender,
                     identity.PhoneNumber,
@@ -121,28 +121,33 @@ namespace Craftmatrix.org.API.Controllers.Authentication
                 var verify = PasswordService.VerifyPassword(request.Password, data.HashPass);
                 if (verify)
                 {
-                    var token = GenerateToken(data.Email, data.Id.ToString(), data.Role);
-                    LoginLogsDto logogo = new LoginLogsDto
+                    var token = GenerateToken(data.Email, data.Id.ToString(), data.RoleId.ToString());
+                    UserLoginTrackingDto loginTracking = new UserLoginTrackingDto
                     {
                         Id = Guid.NewGuid(),
-                        Who = data.Id,
-                        What = "Success",
-                        CreatedAt = DateTime.UtcNow,
+                        UserId = data.Id,
+                        IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "Unknown",
+                        UserAgent = HttpContext.Request.Headers["User-Agent"].ToString(),
+                        LoginTimestamp = DateTime.UtcNow,
+                        LoginStatus = "Success"
                     };
-                    await _db.PostDataAsync<LoginLogsDto>("LoginLogs", logogo, logogo.Id);
-                    return Ok(new { role = data.Role, token });
+                    await _db.PostDataAsync<UserLoginTrackingDto>("UserLoginTracking", loginTracking, loginTracking.Id);
+                    return Ok(new { roleId = data.RoleId, token });
 
                 }
                 else
                 {
-                    LoginLogsDto logogo = new LoginLogsDto
+                    UserLoginTrackingDto loginTracking = new UserLoginTrackingDto
                     {
                         Id = Guid.NewGuid(),
-                        Who = data.Id,
-                        What = "Failed",
-                        CreatedAt = DateTime.UtcNow,
+                        UserId = data.Id,
+                        IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "Unknown",
+                        UserAgent = HttpContext.Request.Headers["User-Agent"].ToString(),
+                        LoginTimestamp = DateTime.UtcNow,
+                        LoginStatus = "Failed",
+                        FailureReason = "Wrong Password"
                     };
-                    await _db.PostDataAsync<LoginLogsDto>("LoginLogs", logogo, logogo.Id);
+                    await _db.PostDataAsync<UserLoginTrackingDto>("UserLoginTracking", loginTracking, loginTracking.Id);
                     return BadRequest("Wrong Password");
                 }
                 // return Ok(new { pass, data.HashPass });
@@ -150,11 +155,11 @@ namespace Craftmatrix.org.API.Controllers.Authentication
             }
         }
 
-        private string GenerateToken(string email, string userId, string role)
+        private string GenerateToken(string email, string userId, string roleId)
         {
             if (string.IsNullOrEmpty(email)) throw new ArgumentNullException(nameof(email));
             if (string.IsNullOrEmpty(userId)) throw new ArgumentNullException(nameof(userId));
-            if (string.IsNullOrEmpty(role)) throw new ArgumentNullException(nameof(role));
+            if (string.IsNullOrEmpty(roleId)) throw new ArgumentNullException(nameof(roleId));
 
             var jwtSecret = Environment.GetEnvironmentVariable("JWT_SECRET");
             if (string.IsNullOrEmpty(jwtSecret))
@@ -171,7 +176,7 @@ namespace Craftmatrix.org.API.Controllers.Authentication
                 {
                                     new Claim(JwtRegisteredClaimNames.Sub, email),
                                     new Claim(JwtRegisteredClaimNames.Jti, userId),
-                                    new Claim(ClaimTypes.Role, role)
+                                    new Claim(ClaimTypes.Role, roleId)
                                 }),
                 Expires = DateTime.UtcNow.AddMonths(1),
                 Audience = Environment.GetEnvironmentVariable("JWT_AUDIENCE"),

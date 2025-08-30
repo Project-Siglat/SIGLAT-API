@@ -65,7 +65,7 @@ namespace Craftmatrix.org.API.Controllers.Ambulance
             var tokenData = jsonToken.Payload.Jti;
 
             alerto.Id = Guid.NewGuid();
-            alerto.Uid = Guid.Parse(tokenData);
+            alerto.UserId = Guid.Parse(tokenData);
             alerto.RespondedAt = DateTime.UtcNow;
             await _db.PostDataAsync<AlertDto>("Alerts", alerto, alerto.Id);
             return Ok("Alert posted successfully");
@@ -111,9 +111,9 @@ namespace Craftmatrix.org.API.Controllers.Ambulance
 
             var data = await _db.GetDataAsync<AlertDto>("Alerts");
             var latest = data.OrderByDescending(x => x.RespondedAt).ToArray();
-            var specific = latest.FirstOrDefault(x => x.Uid == Guid.Parse(tokenData));
+            var specific = latest.FirstOrDefault(x => x.UserId == Guid.Parse(tokenData));
 
-            var zawarudo = await _db.GetSingleDataAsync<UserXYZDto>("UserXYZ", specific.Responder);
+            var zawarudo = await _db.GetSingleDataAsync<CoordinatesDto>("Coordinates", specific.ResponderId);
             if (zawarudo == null)
             {
                 return NotFound("Responder not found");
@@ -155,11 +155,11 @@ namespace Craftmatrix.org.API.Controllers.Ambulance
 
             var data = await _db.GetDataAsync<AlertDto>("Alerts");
             var latest = data.OrderByDescending(x => x.RespondedAt).ToArray();
-            var specific = latest.FirstOrDefault(x => x.Responder == Guid.Parse(tokenData));
+            var specific = latest.FirstOrDefault(x => x.ResponderId == Guid.Parse(tokenData));
 
             // return Ok(new { tokenData, latest });
 
-            var zawarudo = await _db.GetSingleDataAsync<UserXYZDto>("UserXYZ", specific.Uid);
+            var zawarudo = await _db.GetSingleDataAsync<CoordinatesDto>("Coordinates", specific.UserId);
             if (zawarudo == null)
             {
                 return NotFound("Responder not found");
@@ -193,7 +193,7 @@ namespace Craftmatrix.org.API.Controllers.Ambulance
         {
             var data = await _db.GetDataAsync<AlertDto>("Alerts");
             var latest = data.OrderByDescending(x => x.RespondedAt).ToArray();
-            var specific = latest.FirstOrDefault(x => x.Responder == id);
+            var specific = latest.FirstOrDefault(x => x.ResponderId == id);
 
             if (specific == null)
             {
@@ -220,14 +220,14 @@ namespace Craftmatrix.org.API.Controllers.Ambulance
         public async Task<IActionResult> AmbulanceLists()
         {
             var data = await _db.GetDataAsync<IdentityDto>("Identity");
-            var ambulanceOnly = data.Where(r => r.Role.ToUpper() == "ambulance".ToUpper());
+            var ambulanceOnly = data.Where(r => r.RoleId == 3); // Ambulance role ID
 
             var coordinates = ambulanceOnly.Select(e => e.Id).ToArray();
 
-            var xyList = new List<UserXYZDto>();
+            var xyList = new List<CoordinatesDto>();
             for (int i = 0; i < coordinates.Count(); i++)
             {
-                var xy = await _db.GetSingleDataAsync<UserXYZDto>("UserXYZ", coordinates[i]);
+                var xy = await _db.GetSingleDataAsync<CoordinatesDto>("Coordinates", coordinates[i]);
                 if (xy != null)
                 {
                     xyList.Add(xy);

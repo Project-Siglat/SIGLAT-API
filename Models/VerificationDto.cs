@@ -1,14 +1,40 @@
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+
 namespace Craftmatrix.org.API.Models
 {
+    [Table("Verifications")]
     public class VerificationDto
     {
-        public Guid Id { get; set; }
+        [Key]
+        public Guid Id { get; set; } = Guid.NewGuid();
+        
+        [Required]
+        [ForeignKey("Identity")]
+        public Guid UserId { get; set; }
+        
+        [Required]
         public string B64Image { get; set; }
+        
+        [Required]
+        [StringLength(50)]
         public string VerificationType { get; set; }
+        
+        [StringLength(500)]
         public string Remarks { get; set; }
-        public string Status { get; set; }
-        public DateTime CreatedAt { get; set; }
-        public DateTime UpdatedAt { get; set; }
+        
+        [Required]
+        [StringLength(20)]
+        public string Status { get; set; } = "Pending";
+        
+        [Required]
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        
+        [Required]
+        public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+        
+        // Navigation property
+        public virtual IdentityDto Identity { get; set; }
     }
 
     public class VerificationDetailsDto
