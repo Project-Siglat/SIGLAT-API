@@ -398,6 +398,104 @@ namespace Craftmatrix.org.API.Services
         }
     }
 
+    /// <summary>
+    /// Inserts a new record into the specified table using explicit SQL.
+    /// </summary>
+    public async Task<bool> PostIdentityDataAsync(string tableName, object data, object id)
+    {
+        try
+        {
+            using (var connection = await CreateConnectionAsync())
+            {
+                // First check if record exists
+                string checkQuery = $"SELECT COUNT(*) FROM \"{tableName}\" WHERE \"Id\" = @Id";
+                int count = await connection.ExecuteScalarAsync<int>(checkQuery, new { Id = id });
+
+                if (count > 0)
+                {
+                    // Record exists, use explicit UPDATE for Identity table
+                    return await UpdateIdentityRecordAsync(connection, data, id);
+                }
+                else
+                {
+                    // Record doesn't exist, use explicit INSERT for Identity table
+                    return await InsertIdentityRecordAsync(connection, data);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, $"Error saving identity data to table '{tableName}'");
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Updates an existing Identity record using explicit SQL to avoid reflection issues.
+    /// </summary>
+    private async Task<bool> UpdateIdentityRecordAsync(IDbConnection connection, object data, object id)
+    {
+        try
+        {
+            string query = @"
+                UPDATE ""Identity"" SET 
+                    ""FirstName"" = @FirstName, ""MiddleName"" = @MiddleName, ""LastName"" = @LastName, 
+                    ""Address"" = @Address, ""Gender"" = @Gender, ""PhoneNumber"" = @PhoneNumber, 
+                    ""DateOfBirth"" = @DateOfBirth, ""Email"" = @Email, ""RoleId"" = @RoleId, 
+                    ""IsEmailVerified"" = @IsEmailVerified, ""IsPhoneVerified"" = @IsPhoneVerified, 
+                    ""EmailVerifiedAt"" = @EmailVerifiedAt, ""PhoneVerifiedAt"" = @PhoneVerifiedAt, 
+                    ""HashPass"" = @HashPass, ""CreatedAt"" = @CreatedAt, ""UpdatedAt"" = @UpdatedAt
+                WHERE ""Id"" = @Id";
+
+            _logger.LogDebug($"Executing explicit Identity update query: {query}");
+
+            var parameters = new DynamicParameters(data);
+            parameters.Add("Id", id);
+
+            int rowsAffected = await connection.ExecuteAsync(query, parameters);
+            _logger.LogInformation($"Updated Identity record with ID {id}");
+            return rowsAffected > 0;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, $"Error updating Identity record with explicit SQL");
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Inserts a new Identity record using explicit SQL to avoid reflection issues.
+    /// </summary>
+    private async Task<bool> InsertIdentityRecordAsync(IDbConnection connection, object data)
+    {
+        try
+        {
+            string query = @"
+                INSERT INTO ""Identity"" (
+                    ""Id"", ""FirstName"", ""MiddleName"", ""LastName"", ""Address"", 
+                    ""Gender"", ""PhoneNumber"", ""DateOfBirth"", ""Email"", ""RoleId"", 
+                    ""IsEmailVerified"", ""IsPhoneVerified"", ""EmailVerifiedAt"", ""PhoneVerifiedAt"", 
+                    ""HashPass"", ""CreatedAt"", ""UpdatedAt""
+                ) VALUES (
+                    @Id, @FirstName, @MiddleName, @LastName, @Address, 
+                    @Gender, @PhoneNumber, @DateOfBirth, @Email, @RoleId, 
+                    @IsEmailVerified, @IsPhoneVerified, @EmailVerifiedAt, @PhoneVerifiedAt, 
+                    @HashPass, @CreatedAt, @UpdatedAt
+                )";
+
+            _logger.LogDebug($"Executing explicit Identity insert query: {query}");
+
+            int rowsAffected = await connection.ExecuteAsync(query, data);
+            _logger.LogInformation($"Inserted new Identity record");
+            return rowsAffected > 0;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, $"Error inserting Identity record with explicit SQL");
+            throw;
+        }
+    }
+
     private string GetEnvironmentVariableOrThrow(string name)
     {
         string value = Environment.GetEnvironmentVariable(name);

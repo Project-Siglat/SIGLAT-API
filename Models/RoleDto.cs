@@ -21,8 +21,5 @@ namespace Craftmatrix.org.API.Models
 
         [Required]
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
-
-        // Navigation property
-        public virtual ICollection<IdentityDto> Users { get; set; } = new List<IdentityDto>();
     }
 }

@@ -124,7 +124,7 @@ namespace Craftmatrix.org.API.Controllers.Authentication
             {
                 var existingIdentity = await _db.GetDataByColumnAsync<IdentityDto>("Identity", "Email", request.Email);
                 var data = existingIdentity.FirstOrDefault();
-                
+
                 if (data == null)
                 {
                     // Log failed login attempt for non-existent user
@@ -140,7 +140,7 @@ namespace Craftmatrix.org.API.Controllers.Authentication
                         AttemptedEmail = request.Email
                     };
                     await _db.PostDataAsync<UserLoginTrackingDto>("UserLoginTracking", loginTracking, loginTracking.Id);
-                    
+
                     return NotFound("User not found");
                 }
 
@@ -148,7 +148,7 @@ namespace Craftmatrix.org.API.Controllers.Authentication
                 if (verify)
                 {
                     var token = GenerateToken(data.Email, data.Id.ToString(), data.RoleId.ToString());
-                    
+
                     loginTracking = new UserLoginTrackingDto
                     {
                         Id = Guid.NewGuid(),
@@ -159,7 +159,7 @@ namespace Craftmatrix.org.API.Controllers.Authentication
                         LoginStatus = "Success"
                     };
                     await _db.PostDataAsync<UserLoginTrackingDto>("UserLoginTracking", loginTracking, loginTracking.Id);
-                    
+
                     return Ok(new { roleId = data.RoleId, token, userId = data.Id });
                 }
                 else
@@ -175,7 +175,7 @@ namespace Craftmatrix.org.API.Controllers.Authentication
                         FailureReason = "Wrong Password"
                     };
                     await _db.PostDataAsync<UserLoginTrackingDto>("UserLoginTracking", loginTracking, loginTracking.Id);
-                    
+
                     return BadRequest("Wrong Password");
                 }
             }
@@ -194,7 +194,7 @@ namespace Craftmatrix.org.API.Controllers.Authentication
                     AttemptedEmail = request.Email
                 };
                 await _db.PostDataAsync<UserLoginTrackingDto>("UserLoginTracking", loginTracking, loginTracking.Id);
-                
+
                 return StatusCode(500, "Login system error");
             }
         }
@@ -245,7 +245,7 @@ namespace Craftmatrix.org.API.Controllers.Authentication
             {
                 var adminUsers = await _db.GetDataByColumnAsync<IdentityDto>("Identity", "RoleId", 1); // RoleId 1 = Admin
                 var exists = adminUsers.Any();
-                
+
                 return Ok(new { exists });
             }
             catch (Exception ex)
@@ -265,94 +265,82 @@ namespace Craftmatrix.org.API.Controllers.Authentication
         [AllowAnonymous]
         public async Task<IActionResult> CreateAdmin([FromBody] AuthDto request)
         {
-            try
+
+
+            // Che/ck if admin already exists
+            var existingAdmins = await _db.GetDataByColumnAsync<IdentityDto>("Identity", "RoleId", 1);
+            if (existingAdmins.Any())
             {
-                // Check if admin already exists
-                var existingAdmins = await _db.GetDataByColumnAsync<IdentityDto>("Identity", "RoleId", 1);
-                if (existingAdmins.Any())
-                {
-                    return BadRequest("Admin account already exists");
-                }
-
-                // Validate email format
-                if (string.IsNullOrEmpty(request.Email) || !IsValidEmail(request.Email))
-                {
-                    return BadRequest("Valid email address is required");
-                }
-
-                // Validate password strength
-                if (string.IsNullOrEmpty(request.Password) || !IsValidPassword(request.Password))
-                {
-                    return BadRequest("Password must be at least 12 characters with uppercase, lowercase, numbers, and special characters");
-                }
-
-                // Check if email already exists
-                var existingIdentity = await _db.GetDataByColumnAsync<IdentityDto>("Identity", "Email", request.Email);
-                if (existingIdentity.Any())
-                {
-                    return BadRequest("Email already exists");
-                }
-
-                var adminIdentity = new IdentityDto
-                {
-                    Id = Guid.NewGuid(),
-                    FirstName = "Admin",
-                    MiddleName = "",
-                    LastName = "User",
-                    Address = "",
-                    Gender = "Other",
-                    PhoneNumber = "",
-                    DateOfBirth = DateTime.UtcNow.AddYears(-30), // Default age
-                    Email = request.Email,
-                    RoleId = 1, // Admin role
-                    IsEmailVerified = true, // Auto-verify admin email
-                    IsPhoneVerified = false,
-                    HashPass = PasswordService.HashPassword(request.Password),
-                    CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = DateTime.UtcNow
-                };
-
-                var adminForDb = new
-                {
-                    adminIdentity.Id,
-                    adminIdentity.FirstName,
-                    adminIdentity.MiddleName,
-                    adminIdentity.LastName,
-                    adminIdentity.Address,
-                    adminIdentity.RoleId,
-                    adminIdentity.DateOfBirth,
-                    adminIdentity.Gender,
-                    adminIdentity.PhoneNumber,
-                    adminIdentity.Email,
-                    adminIdentity.IsEmailVerified,
-                    adminIdentity.IsPhoneVerified,
-                    EmailVerifiedAt = DateTime.UtcNow,
-                    PhoneVerifiedAt = (DateTime?)null,
-                    adminIdentity.HashPass,
-                    adminIdentity.CreatedAt,
-                    adminIdentity.UpdatedAt
-                };
-
-                await _db.PostDataAsync("Identity", adminForDb, adminIdentity.Id);
-
-                // Log the admin creation
-                var loginTracking = new UserLoginTrackingDto
-                {
-                    Id = Guid.NewGuid(),
-                    UserId = adminIdentity.Id,
-                    IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "Unknown",
-                    UserAgent = HttpContext.Request.Headers["User-Agent"].ToString(),
-                    LoginTimestamp = DateTime.UtcNow,
-                    LoginStatus = "Admin Created"
-                };
-                await _db.PostDataAsync<UserLoginTrackingDto>("UserLoginTracking", loginTracking, loginTracking.Id);
-
-                return Ok(new { message = "Admin account created successfully", adminId = adminIdentity.Id });
+                return BadRequest("Admin account already exists");
             }
-            catch (Exception ex)
+
+            // Validate email format
+            if (string.IsNullOrEmpty(request.Email) || !IsValidEmail(request.Email))
             {
-                return BadRequest($"Failed to create admin: {ex.Message}");
+                return BadRequest("Valid email address is required");
             }
+
+            // Validate password strength
+            if (string.IsNullOrEmpty(request.Password) || !IsValidPassword(request.Password))
+            {
+                return BadRequest("Password must be at least 12 characters with uppercase, lowercase, numbers, and special characters");
+            }
+
+            // Check if email already exists
+            var existingIdentity = await _db.GetDataByColumnAsync<IdentityDto>("Identity", "Email", request.Email);
+            if (existingIdentity.Any())
+            {
+                return BadRequest("Email already exists");
+            }
+
+            var roles = await _db.GetDataByColumnAsync<RoleDto>("Roles", "Name", "Admin");
+
+            var therole = roles.FirstOrDefault().Id;
+
+
+            var adminId = Guid.NewGuid();
+            var adminForDb = new
+            {
+                Id = adminId,
+                FirstName = "Admin",
+                MiddleName = "",
+                LastName = "User",
+                Address = "",
+                Gender = "Other",
+                PhoneNumber = "",
+                DateOfBirth = DateTime.UtcNow.AddYears(-30),
+                Email = request.Email,
+                RoleId = therole,
+                IsEmailVerified = true,
+                IsPhoneVerified = false,
+                EmailVerifiedAt = (DateTime?)DateTime.UtcNow,
+                PhoneVerifiedAt = (DateTime?)null,
+                HashPass = PasswordService.HashPassword(request.Password),
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            };
+
+            //return Ok(adminForDb);
+
+            await _db.PostDataAsync("Identity", adminForDb, adminId);
+
+            // return Ok("test?");
+
+            // Log the admin creation
+            var loginTracking = new UserLoginTrackingDto
+            {
+                Id = Guid.NewGuid(),
+                UserId = adminId,
+                IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "Unknown",
+                UserAgent = HttpContext.Request.Headers["User-Agent"].ToString(),
+                LoginTimestamp = DateTime.UtcNow,
+                LoginStatus = "Admin Created"
+            };
+
+            // return Ok(loginTracking);
+            await _db.PostDataAsync<UserLoginTrackingDto>("UserLoginTracking", loginTracking, loginTracking.Id);
+
+            return Ok(new { message = "Admin account created successfully", adminId = adminId });
         }
 
         private bool IsValidEmail(string email)
@@ -393,7 +381,7 @@ namespace Craftmatrix.org.API.Controllers.Authentication
             {
                 var logs = await _db.GetDataAsync<UserLoginTrackingDto>("UserLoginTracking");
                 var sortedLogs = logs.OrderByDescending(l => l.LoginTimestamp).Take(100); // Last 100 entries
-                
+
                 return Ok(sortedLogs);
             }
             catch (Exception ex)
@@ -428,7 +416,7 @@ namespace Craftmatrix.org.API.Controllers.Authentication
 
                 var userProfile = await _db.GetDataByColumnAsync<IdentityDto>("Identity", "Id", userId);
                 var user = userProfile.FirstOrDefault();
-                
+
                 if (user == null)
                 {
                     return NotFound("User not found");
@@ -446,7 +434,7 @@ namespace Craftmatrix.org.API.Controllers.Authentication
                     Address = user.Address,
                     Gender = user.Gender,
                     DateOfBirth = user.DateOfBirth,
-                    Role = user.Role,
+                    RoleId = user.RoleId,
                     IsEmailVerified = user.IsEmailVerified,
                     EmailVerifiedAt = user.EmailVerifiedAt,
                     IsPhoneVerified = user.IsPhoneVerified,
@@ -521,17 +509,18 @@ namespace Craftmatrix.org.API.Controllers.Authentication
 
                 // Check for recent unused tokens
                 var recentTokens = await _db.GetDataAsync<ContactVerificationTokenDto>("ContactVerificationTokens");
-                var existingToken = recentTokens.FirstOrDefault(t => 
-                    t.UserId == userId && 
-                    t.VerificationType == request.VerificationType.ToLower() && 
-                    !t.IsUsed && 
+                var existingToken = recentTokens.FirstOrDefault(t =>
+                    t.UserId == userId &&
+                    t.VerificationType == request.VerificationType.ToLower() &&
+                    !t.IsUsed &&
                     t.ExpiresAt > DateTime.UtcNow &&
                     t.CreatedAt > DateTime.UtcNow.AddMinutes(-2)); // Don't allow new codes within 2 minutes
 
                 if (existingToken != null)
                 {
                     var remainingTime = existingToken.ExpiresAt.Subtract(DateTime.UtcNow);
-                    return BadRequest(new { 
+                    return BadRequest(new
+                    {
                         message = "A verification code was recently sent. Please wait before requesting a new one.",
                         retryAfter = remainingTime.TotalSeconds
                     });
@@ -596,9 +585,9 @@ namespace Craftmatrix.org.API.Controllers.Authentication
 
                 // Find the verification token
                 var tokens = await _db.GetDataAsync<ContactVerificationTokenDto>("ContactVerificationTokens");
-                var token = tokens.FirstOrDefault(t => 
-                    t.UserId == userId && 
-                    t.VerificationType == request.VerificationType.ToLower() && 
+                var token = tokens.FirstOrDefault(t =>
+                    t.UserId == userId &&
+                    t.VerificationType == request.VerificationType.ToLower() &&
                     t.ContactValue == request.ContactValue &&
                     !t.IsUsed &&
                     t.ExpiresAt > DateTime.UtcNow);
@@ -620,8 +609,9 @@ namespace Craftmatrix.org.API.Controllers.Authentication
                     // Increment attempt count
                     token.AttemptCount++;
                     await _db.PostDataAsync<ContactVerificationTokenDto>("ContactVerificationTokens", token, token.Id);
-                    
-                    return BadRequest(new { 
+
+                    return BadRequest(new
+                    {
                         message = "Invalid verification code",
                         attemptsRemaining = Math.Max(0, 5 - token.AttemptCount)
                     });

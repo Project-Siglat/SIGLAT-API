@@ -59,6 +59,12 @@ namespace Craftmatrix.org.API.Services
         return Task.FromResult(true);
     }
 
+    public Task<bool> PostIdentityDataAsync(string tableName, object data, object id)
+    {
+        _logger.LogWarning($"Mock PostIdentityDataAsync called for table: {tableName}");
+        return Task.FromResult(true);
+    }
+
     public Task<bool> DeleteDataAsync(string tableName, object id)
     {
         _logger.LogWarning($"Mock DeleteDataAsync called for table: {tableName}, id: {id}");

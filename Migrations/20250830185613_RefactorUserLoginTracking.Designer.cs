@@ -3,6 +3,7 @@ using System;
 using Craftmatrix.org.API.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace SIGLATAPI.Migrations
 {
     [DbContext(typeof(AppDBContext))]
-    partial class AppDBContextModelSnapshot : ModelSnapshot
+    [Migration("20250830185613_RefactorUserLoginTracking")]
+    partial class RefactorUserLoginTracking
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -371,42 +374,42 @@ namespace SIGLATAPI.Migrations
                         new
                         {
                             Id = 1,
-                            CreatedAt = new DateTime(2025, 8, 30, 19, 4, 15, 404, DateTimeKind.Utc).AddTicks(1711),
+                            CreatedAt = new DateTime(2025, 8, 30, 18, 56, 13, 378, DateTimeKind.Utc).AddTicks(6409),
                             Description = "System Administrator",
                             Name = "Admin",
-                            UpdatedAt = new DateTime(2025, 8, 30, 19, 4, 15, 404, DateTimeKind.Utc).AddTicks(1712)
+                            UpdatedAt = new DateTime(2025, 8, 30, 18, 56, 13, 378, DateTimeKind.Utc).AddTicks(6409)
                         },
                         new
                         {
                             Id = 2,
-                            CreatedAt = new DateTime(2025, 8, 30, 19, 4, 15, 404, DateTimeKind.Utc).AddTicks(1714),
+                            CreatedAt = new DateTime(2025, 8, 30, 18, 56, 13, 378, DateTimeKind.Utc).AddTicks(6411),
                             Description = "Regular User",
                             Name = "User",
-                            UpdatedAt = new DateTime(2025, 8, 30, 19, 4, 15, 404, DateTimeKind.Utc).AddTicks(1714)
+                            UpdatedAt = new DateTime(2025, 8, 30, 18, 56, 13, 378, DateTimeKind.Utc).AddTicks(6411)
                         },
                         new
                         {
                             Id = 3,
-                            CreatedAt = new DateTime(2025, 8, 30, 19, 4, 15, 404, DateTimeKind.Utc).AddTicks(1716),
+                            CreatedAt = new DateTime(2025, 8, 30, 18, 56, 13, 378, DateTimeKind.Utc).AddTicks(6412),
                             Description = "Ambulance Personnel",
                             Name = "Ambulance",
-                            UpdatedAt = new DateTime(2025, 8, 30, 19, 4, 15, 404, DateTimeKind.Utc).AddTicks(1717)
+                            UpdatedAt = new DateTime(2025, 8, 30, 18, 56, 13, 378, DateTimeKind.Utc).AddTicks(6413)
                         },
                         new
                         {
                             Id = 4,
-                            CreatedAt = new DateTime(2025, 8, 30, 19, 4, 15, 404, DateTimeKind.Utc).AddTicks(1718),
+                            CreatedAt = new DateTime(2025, 8, 30, 18, 56, 13, 378, DateTimeKind.Utc).AddTicks(6413),
                             Description = "Philippine National Police",
                             Name = "PNP",
-                            UpdatedAt = new DateTime(2025, 8, 30, 19, 4, 15, 404, DateTimeKind.Utc).AddTicks(1718)
+                            UpdatedAt = new DateTime(2025, 8, 30, 18, 56, 13, 378, DateTimeKind.Utc).AddTicks(6414)
                         },
                         new
                         {
                             Id = 5,
-                            CreatedAt = new DateTime(2025, 8, 30, 19, 4, 15, 404, DateTimeKind.Utc).AddTicks(1720),
+                            CreatedAt = new DateTime(2025, 8, 30, 18, 56, 13, 378, DateTimeKind.Utc).AddTicks(6414),
                             Description = "Bureau of Fire Protection",
                             Name = "BFP",
-                            UpdatedAt = new DateTime(2025, 8, 30, 19, 4, 15, 404, DateTimeKind.Utc).AddTicks(1720)
+                            UpdatedAt = new DateTime(2025, 8, 30, 18, 56, 13, 378, DateTimeKind.Utc).AddTicks(6415)
                         });
                 });
 
@@ -417,10 +420,12 @@ namespace SIGLATAPI.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<string>("AttemptedEmail")
+                        .IsRequired()
                         .HasMaxLength(255)
                         .HasColumnType("character varying(255)");
 
                     b.Property<string>("FailureReason")
+                        .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
 
@@ -440,10 +445,11 @@ namespace SIGLATAPI.Migrations
                     b.Property<DateTime>("LoginTimestamp")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<DateTime?>("LogoutTimestamp")
+                    b.Property<DateTime>("LogoutTimestamp")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("UserAgent")
+                        .IsRequired()
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
 

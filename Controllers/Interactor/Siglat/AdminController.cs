@@ -53,16 +53,16 @@ namespace Craftmatrix.org.API.Controllers.WhoAmI
                     user.MiddleName,
                     user.LastName,
                     user.Email,
-                    user.PhoneNumber,
-                    user.Role,
-                    user.Gender,
-                    user.DateOfBirth,
-                    user.Address,
-                    user.IsEmailVerified,
-                    user.EmailVerifiedAt,
-                    user.IsPhoneVerified,
-                    user.PhoneVerifiedAt,
-                    user.CreatedAt,
+                     user.PhoneNumber,
+                     user.RoleId,
+                     user.Gender,
+                     user.DateOfBirth,
+                     user.Address,
+                     user.IsEmailVerified,
+                     user.EmailVerifiedAt,
+                     user.IsPhoneVerified,
+                     user.PhoneVerifiedAt,
+                     user.CreatedAt,
                     user.UpdatedAt
                 }).OrderByDescending(u => u.CreatedAt);
                 
@@ -95,7 +95,7 @@ namespace Craftmatrix.org.API.Controllers.WhoAmI
                     user.LastName,
                     user.Email,
                     user.PhoneNumber,
-                    user.Role,
+                     user.RoleId,
                     user.Gender,
                     user.DateOfBirth,
                     user.Address,
@@ -266,7 +266,7 @@ namespace Craftmatrix.org.API.Controllers.WhoAmI
                     user.LastName,
                     user.Email,
                     user.PhoneNumber,
-                    user.Role,
+                     user.RoleId,
                     user.Gender,
                     user.DateOfBirth,
                     user.Address,
@@ -485,7 +485,7 @@ namespace Craftmatrix.org.API.Controllers.WhoAmI
                     user.LastName,
                     user.Email,
                     user.PhoneNumber,
-                    user.Role,
+                     user.RoleId,
                     Department = "Emergency Response System", // Static for now
                     Location = "Villaverde, Nueva Vizcaya"     // Static for now
                 };
@@ -539,7 +539,7 @@ namespace Craftmatrix.org.API.Controllers.WhoAmI
                     existingUser.LastName,
                     existingUser.Email,
                     existingUser.PhoneNumber,
-                    existingUser.Role,
+                     existingUser.RoleId,
                     Department = profileData.Department ?? "Emergency Response System",
                     Location = profileData.Location ?? "Villaverde, Nueva Vizcaya"
                 };

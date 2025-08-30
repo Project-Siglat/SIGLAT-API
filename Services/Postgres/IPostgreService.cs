@@ -65,6 +65,15 @@ namespace Craftmatrix.org.API.Services
     Task<bool> PostDataAsync<T>(string tableName, T data, object id) where T : class;
 
     /// <summary>
+    /// Creates or updates Identity data using explicit SQL to avoid reflection issues.
+    /// </summary>
+    /// <param name="tableName">The name of the table</param>
+    /// <param name="data">The data object to save</param>
+    /// <param name="id">The ID of the record (for updates)</param>
+    /// <returns>True if operation was successful, false otherwise</returns>
+    Task<bool> PostIdentityDataAsync(string tableName, object data, object id);
+
+    /// <summary>
     /// Deletes a record from the specified table by ID.
     /// </summary>
     /// <param name="tableName">The name of the table</param>

@@ -24,12 +24,9 @@ namespace Craftmatrix.org.API.Data
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            // Identity -> Role relationship
+            // Identity -> Role relationship (using RoleId foreign key only)
             modelBuilder.Entity<IdentityDto>()
-                .HasOne(i => i.Role)
-                .WithMany(r => r.Users)
-                .HasForeignKey(i => i.RoleId)
-                .OnDelete(DeleteBehavior.Restrict);
+                .HasIndex(i => i.RoleId);
 
             // Coordinates -> Identity relationship
             modelBuilder.Entity<CoordinatesDto>()
@@ -73,12 +70,49 @@ namespace Craftmatrix.org.API.Data
                 .HasForeignKey(r => r.WhoReportedId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // UserLoginTracking -> Identity relationship
+            // UserLoginTracking configuration
             modelBuilder.Entity<UserLoginTrackingDto>()
-                .HasOne(ult => ult.Identity)
-                .WithMany()
-                .HasForeignKey(ult => ult.UserId)
-                .OnDelete(DeleteBehavior.Cascade);
+                .HasKey(ult => ult.Id);
+
+            modelBuilder.Entity<UserLoginTrackingDto>()
+                .ToTable("UserLoginTracking");
+
+            modelBuilder.Entity<UserLoginTrackingDto>()
+                .Property(ult => ult.UserId)
+                .IsRequired();
+
+            modelBuilder.Entity<UserLoginTrackingDto>()
+                .Property(ult => ult.IpAddress)
+                .HasMaxLength(45)
+                .IsRequired();
+
+            modelBuilder.Entity<UserLoginTrackingDto>()
+                .Property(ult => ult.UserAgent)
+                .HasMaxLength(500)
+                .IsRequired(false);
+
+            modelBuilder.Entity<UserLoginTrackingDto>()
+                .Property(ult => ult.LoginTimestamp)
+                .IsRequired();
+
+            modelBuilder.Entity<UserLoginTrackingDto>()
+                .Property(ult => ult.LogoutTimestamp)
+                .IsRequired(false);
+
+            modelBuilder.Entity<UserLoginTrackingDto>()
+                .Property(ult => ult.LoginStatus)
+                .HasMaxLength(20)
+                .IsRequired();
+
+            modelBuilder.Entity<UserLoginTrackingDto>()
+                .Property(ult => ult.FailureReason)
+                .HasMaxLength(200)
+                .IsRequired(false);
+
+            modelBuilder.Entity<UserLoginTrackingDto>()
+                .Property(ult => ult.AttemptedEmail)
+                .HasMaxLength(255)
+                .IsRequired(false);
 
             // Alert -> Identity relationships (User and Responder)
             modelBuilder.Entity<AlertDto>()
