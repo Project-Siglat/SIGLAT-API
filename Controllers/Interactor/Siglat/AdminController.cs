@@ -146,14 +146,86 @@ namespace Craftmatrix.org.API.Controllers.WhoAmI
         {
             try
             {
+                // Get current admin user ID from the token
+                var adminUserIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(adminUserIdClaim) || !Guid.TryParse(adminUserIdClaim, out Guid adminUserId))
+                {
+                    return Unauthorized(new { message = "Invalid admin user token" });
+                }
+
+                // Get the existing verification record to capture previous status
+                var existingVerification = await _db.GetSingleDataAsync<VerificationDto>("Verifications", verification.Id);
+                if (existingVerification == null)
+                {
+                    return NotFound(new { message = "Verification record not found" });
+                }
+
+                string previousStatus = existingVerification.Status;
+                string newStatus = verification.Status;
+
+                // Validate status change
+                if (!VerificationStatus.IsValidStatus(newStatus))
+                {
+                    return BadRequest(new { message = "Invalid verification status" });
+                }
+
+                // Update the verification record
                 verification.UpdatedAt = DateTime.UtcNow;
                 await _db.PostDataAsync<VerificationDto>("Verifications", verification, verification.Id);
-                return Ok(verification);
+
+                // Create verification log entry
+                var verificationLog = new VerificationLogsDto
+                {
+                    VerificationId = verification.Id,
+                    AdminUserId = adminUserId,
+                    PreviousStatus = previousStatus,
+                    NewStatus = newStatus,
+                    Action = DetermineLogAction(previousStatus, newStatus),
+                    Reason = verification.Remarks, // Use the verification remarks as reason
+                    AdminRemarks = $"Status changed from {previousStatus} to {newStatus}",
+                    ActionTimestamp = DateTime.UtcNow,
+                    IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString(),
+                    UserAgent = HttpContext.Request.Headers["User-Agent"].ToString()
+                };
+
+                // Save the log entry
+                await _db.PostDataAsync<VerificationLogsDto>("VerificationLogs", verificationLog, verificationLog.Id);
+
+                return Ok(new 
+                { 
+                    verification,
+                    logEntry = new 
+                    {
+                        verificationLog.Id,
+                        verificationLog.Action,
+                        verificationLog.PreviousStatus,
+                        verificationLog.NewStatus,
+                        verificationLog.ActionTimestamp
+                    }
+                });
             }
             catch (Exception ex)
             {
                 return StatusCode(500, new { message = "Failed to update verification", error = ex.Message });
             }
+        }
+
+        /// <summary>
+        /// Determines the appropriate log action based on status change
+        /// </summary>
+        private string DetermineLogAction(string previousStatus, string newStatus)
+        {
+            if (previousStatus == newStatus)
+                return VerificationLogAction.Updated;
+
+            return newStatus.ToLower() switch
+            {
+                "approved" => VerificationLogAction.Approved,
+                "rejected" => VerificationLogAction.Rejected,
+                "under_review" => VerificationLogAction.UnderReview,
+                "pending" => VerificationLogAction.Resubmitted,
+                _ => VerificationLogAction.StatusChanged
+            };
         }
 
 
@@ -289,19 +361,52 @@ namespace Craftmatrix.org.API.Controllers.WhoAmI
                     return BadRequest(new { message = "Invalid verification status" });
                 }
 
+                // Get current admin user ID from the token
+                var adminUserIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(adminUserIdClaim) || !Guid.TryParse(adminUserIdClaim, out Guid adminUserId))
+                {
+                    return Unauthorized(new { message = "Invalid admin user token" });
+                }
+
                 var existingVerification = await _db.GetSingleDataAsync<VerificationDto>("Verifications", id);
                 if (existingVerification == null)
                 {
                     return NotFound(new { message = "Verification not found" });
                 }
 
-                existingVerification.Status = statusUpdate.Status.ToLower();
+                string previousStatus = existingVerification.Status;
+                string newStatus = statusUpdate.Status.ToLower();
+
+                existingVerification.Status = newStatus;
                 existingVerification.Remarks = statusUpdate.Remarks ?? existingVerification.Remarks;
                 existingVerification.UpdatedAt = DateTime.UtcNow;
 
                 await _db.PostDataAsync<VerificationDto>("Verifications", existingVerification, existingVerification.Id);
 
-                return Ok(new { message = "Verification status updated successfully", status = existingVerification.Status });
+                // Create verification log entry
+                var verificationLog = new VerificationLogsDto
+                {
+                    VerificationId = id,
+                    AdminUserId = adminUserId,
+                    PreviousStatus = previousStatus,
+                    NewStatus = newStatus,
+                    Action = DetermineLogAction(previousStatus, newStatus),
+                    Reason = statusUpdate.Remarks,
+                    AdminRemarks = $"Status updated from {previousStatus} to {newStatus} via API",
+                    ActionTimestamp = DateTime.UtcNow,
+                    IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString(),
+                    UserAgent = HttpContext.Request.Headers["User-Agent"].ToString()
+                };
+
+                // Save the log entry
+                await _db.PostDataAsync<VerificationLogsDto>("VerificationLogs", verificationLog, verificationLog.Id);
+
+                return Ok(new 
+                { 
+                    message = "Verification status updated successfully", 
+                    status = existingVerification.Status,
+                    logId = verificationLog.Id
+                });
             }
             catch (Exception ex)
             {
@@ -441,6 +546,71 @@ namespace Craftmatrix.org.API.Controllers.WhoAmI
             {
                 return StatusCode(500, new { message = "Failed to update profile", error = ex.Message });
             }
+        }
+
+        /// <summary>
+        /// Get verification logs for audit trail (Admin only)
+        /// </summary>
+        /// <param name="verificationId">Optional: Filter logs by specific verification ID</param>
+        /// <returns>List of verification logs with admin and verification details</returns>
+        [HttpGet("verification-logs")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> GetVerificationLogs([FromQuery] Guid? verificationId = null)
+        {
+            try
+            {
+                var logsTask = _db.GetDataAsync<VerificationLogsDto>("VerificationLogs");
+                var adminsTask = _db.GetDataAsync<IdentityDto>("Identity");
+                var verificationsTask = _db.GetDataAsync<VerificationDto>("Verifications");
+
+                await Task.WhenAll(logsTask, adminsTask, verificationsTask);
+
+                var logs = await logsTask;
+                var admins = await adminsTask;
+                var verifications = await verificationsTask;
+
+                // Filter by verification ID if provided
+                if (verificationId.HasValue)
+                {
+                    logs = logs.Where(l => l.VerificationId == verificationId.Value);
+                }
+
+                var logDetails = logs.Select(log => new
+                {
+                    log.Id,
+                    log.VerificationId,
+                    log.AdminUserId,
+                    AdminName = admins.FirstOrDefault(a => a.Id == log.AdminUserId)?.FirstName + " " +
+                               admins.FirstOrDefault(a => a.Id == log.AdminUserId)?.LastName,
+                    VerificationUserId = verifications.FirstOrDefault(v => v.Id == log.VerificationId)?.UserId,
+                    log.PreviousStatus,
+                    log.NewStatus,
+                    log.Action,
+                    log.Reason,
+                    log.AdminRemarks,
+                    log.ActionTimestamp,
+                    log.IpAddress,
+                    log.UserAgent
+                }).OrderByDescending(l => l.ActionTimestamp).ToList();
+
+                return Ok(logDetails);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Failed to retrieve verification logs", error = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Get verification logs for a specific verification (Admin only)
+        /// </summary>
+        /// <param name="id">Verification ID</param>
+        /// <returns>List of logs for the specific verification</returns>
+        [HttpGet("verification/{id}/logs")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> GetVerificationLogsByVerificationId(Guid id)
+        {
+            return await GetVerificationLogs(id);
         }
     }
 }
