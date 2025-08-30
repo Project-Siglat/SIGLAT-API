@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
-using Rai.SIGLAT.API.Models;
+using Craftmatrix.org.API.Models;
 
-namespace Rai.SIGLAT.API.Data
+namespace Craftmatrix.org.API.Data
 {
     public class AppDBContext : DbContext
     {

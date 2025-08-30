@@ -1,4 +1,4 @@
-namespace Rai.SIGLAT.API.Models
+namespace Craftmatrix.org.API.Models
 {
     public class UserXYZDto
     {

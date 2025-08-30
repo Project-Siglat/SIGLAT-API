@@ -1,7 +1,7 @@
 using System.Net;
 using System.Text.Json;
 
-namespace Rai.SIGLAT.API.Middleware
+namespace Craftmatrix.org.API.Middleware
 {
     public class ErrorHandlingMiddleware
     {

@@ -1,4 +1,4 @@
-using Rai.SIGLAT.API.Data;
+using Craftmatrix.org.API.Data;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -7,8 +7,8 @@ using dotenv.net;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc;
 using System.Reflection;
-using Rai.SIGLAT.API.Middleware;
-using Rai.SIGLAT.API.Services;
+using Craftmatrix.org.API.Middleware;
+using Craftmatrix.org.API.Services;
 
 DotEnv.Load();
 var Origin = "_Origin";
@@ -114,7 +114,7 @@ builder.Services.AddSwaggerGen(c =>
     }
     
     // Enable annotations for better documentation
-    c.EnableAnnotations();
+    // c.EnableAnnotations();
 });
 
 builder.Services.AddControllers();

@@ -9,7 +9,7 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Rai.SIGLAT.API.Services
+namespace Craftmatrix.org.API.Services
 {
     public class PostgreService : IPostgreService
 {

@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace Rai.SIGLAT.API.Services
+namespace Craftmatrix.org.API.Services
 {
     public interface IPostgreService
 {

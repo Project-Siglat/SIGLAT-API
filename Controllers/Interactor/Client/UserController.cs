@@ -1,9 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
-using Rai.SIGLAT.API.Models;
-using Rai.SIGLAT.API.Services;
+using Craftmatrix.org.API.Models;
+using Craftmatrix.org.API.Services;
 
-namespace Rai.SIGLAT.API.Controllers.Client
+namespace Craftmatrix.org.API.Controllers.Client
 {
     /// <summary>
     /// Controller for managing user-specific operations and location tracking

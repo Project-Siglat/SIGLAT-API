@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace Rai.SIGLAT.API.Models
+namespace Craftmatrix.org.API.Models
 {
     public class IdentityDto
     {

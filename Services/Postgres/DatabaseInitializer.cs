@@ -5,10 +5,10 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Rai.SIGLAT.API.Data;
-using Rai.SIGLAT.API.Services;
+using Craftmatrix.org.API.Data;
+using Craftmatrix.org.API.Services;
 
-namespace Rai.SIGLAT.API.Services
+namespace Craftmatrix.org.API.Services
 {
     public class DatabaseInitializer : IHostedService
 {

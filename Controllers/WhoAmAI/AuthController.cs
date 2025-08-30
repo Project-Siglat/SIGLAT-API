@@ -1,15 +1,15 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
-using Rai.SIGLAT.API.Models;
-using Rai.SIGLAT.API.Services;
-using Rai.SIGLAT.API.Services;
+using Craftmatrix.org.API.Models;
+using Craftmatrix.org.API.Services;
+using Craftmatrix.org.API.Services;
 using System.Security.Claims;
 using System.Text.Json;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Text;
 
-namespace Rai.SIGLAT.API.Controllers.Authentication
+namespace Craftmatrix.org.API.Controllers.Authentication
 {
     /// <summary>
     /// Authentication controller for user registration, login, and profile management
