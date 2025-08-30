@@ -1,9 +1,17 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
-using SIGLAT.API.Model;
+using Craftmatrix.org.API.Models;
+using Craftmatrix.org.API.Services;
 
-namespace SIGLAT.API.Controllers.Client
+namespace Craftmatrix.org.API.Controllers.Client
 {
+    /// <summary>
+    /// Controller for managing user-specific operations and location tracking
+    /// </summary>
+    /// <remarks>
+    /// This controller handles user-related operations including location coordinate updates
+    /// for emergency response tracking and positioning services.
+    /// </remarks>
     [ApiController]
     [ApiVersion("1.0")]
     [Authorize]
@@ -19,17 +27,31 @@ namespace SIGLAT.API.Controllers.Client
             _httpClientFactory = httpClientFactory;
 
         }
+        /// <summary>
+        /// Updates the geographical coordinates of the authenticated user
+        /// </summary>
+        /// <param name="user">The user coordinate data containing latitude and longitude information</param>
+        /// <returns>Success confirmation message</returns>
+        /// <remarks>
+        /// This endpoint allows users to update their current location coordinates for emergency response tracking.
+        /// The user ID is automatically extracted from the JWT token to ensure secure location updates.
+        /// </remarks>
+        /// <response code="200">Coordinates updated successfully</response>
+        /// <response code="400">Invalid coordinate data or missing authorization token</response>
+        /// <response code="401">Unauthorized - valid authentication token required</response>
+        /// <response code="500">Internal server error occurred while updating coordinates</response>
         [HttpPost("coordinates")]
         // [AllowAnonymous]
-        public async Task<IActionResult> Get([FromBody] UserXYZDto user)
+        public async Task<IActionResult> Get([FromBody] CoordinatesDto coordinates)
         {
             var token = HttpContext.Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
             var handler = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler();
             var jsonToken = handler.ReadToken(token) as System.IdentityModel.Tokens.Jwt.JwtSecurityToken;
             var tokenData = jsonToken.Payload.Jti;
 
-            user.Id = Guid.Parse(tokenData);
-            await _db.PostDataAsync<UserXYZDto>("UserXYZ", user, user.Id);
+            coordinates.Id = Guid.Parse(tokenData);
+            coordinates.UserId = Guid.Parse(tokenData);
+            await _db.PostDataAsync<CoordinatesDto>("Coordinates", coordinates, coordinates.Id);
             return Ok("Success");
         }
     }

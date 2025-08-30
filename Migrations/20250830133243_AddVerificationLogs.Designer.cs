@@ -3,6 +3,7 @@ using System;
 using Craftmatrix.org.API.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace SIGLATAPI.Migrations
 {
     [DbContext(typeof(AppDBContext))]
-    partial class AppDBContextModelSnapshot : ModelSnapshot
+    [Migration("20250830133243_AddVerificationLogs")]
+    partial class AddVerificationLogs
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -138,60 +141,6 @@ namespace SIGLATAPI.Migrations
                     b.ToTable("Contact");
                 });
 
-            modelBuilder.Entity("Craftmatrix.org.API.Models.ContactVerificationTokenDto", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("AttemptCount")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("ContactValue")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime>("ExpiresAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("IpAddress")
-                        .HasMaxLength(45)
-                        .HasColumnType("character varying(45)");
-
-                    b.Property<bool>("IsUsed")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("UserAgent")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("VerificationCode")
-                        .IsRequired()
-                        .HasMaxLength(10)
-                        .HasColumnType("character varying(10)");
-
-                    b.Property<string>("VerificationType")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)");
-
-                    b.Property<DateTime?>("VerifiedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("ContactVerificationTokens");
-                });
-
             modelBuilder.Entity("Craftmatrix.org.API.Models.CoordinatesDto", b =>
                 {
                     b.Property<Guid>("Id")
@@ -242,9 +191,6 @@ namespace SIGLATAPI.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<DateTime?>("EmailVerifiedAt")
-                        .HasColumnType("timestamp with time zone");
-
                     b.Property<string>("FirstName")
                         .IsRequired()
                         .HasMaxLength(50)
@@ -257,12 +203,6 @@ namespace SIGLATAPI.Migrations
                     b.Property<string>("HashPass")
                         .IsRequired()
                         .HasColumnType("text");
-
-                    b.Property<bool>("IsEmailVerified")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("IsPhoneVerified")
-                        .HasColumnType("boolean");
 
                     b.Property<string>("LastName")
                         .IsRequired()
@@ -277,9 +217,6 @@ namespace SIGLATAPI.Migrations
                     b.Property<string>("PhoneNumber")
                         .IsRequired()
                         .HasColumnType("text");
-
-                    b.Property<DateTime?>("PhoneVerifiedAt")
-                        .HasColumnType("timestamp with time zone");
 
                     b.Property<int>("RoleId")
                         .HasColumnType("integer");
@@ -375,42 +312,42 @@ namespace SIGLATAPI.Migrations
                         new
                         {
                             Id = 1,
-                            CreatedAt = new DateTime(2025, 8, 30, 13, 43, 58, 518, DateTimeKind.Utc).AddTicks(6667),
+                            CreatedAt = new DateTime(2025, 8, 30, 13, 32, 42, 325, DateTimeKind.Utc).AddTicks(212),
                             Description = "System Administrator",
                             Name = "Admin",
-                            UpdatedAt = new DateTime(2025, 8, 30, 13, 43, 58, 518, DateTimeKind.Utc).AddTicks(6668)
+                            UpdatedAt = new DateTime(2025, 8, 30, 13, 32, 42, 325, DateTimeKind.Utc).AddTicks(214)
                         },
                         new
                         {
                             Id = 2,
-                            CreatedAt = new DateTime(2025, 8, 30, 13, 43, 58, 518, DateTimeKind.Utc).AddTicks(6671),
+                            CreatedAt = new DateTime(2025, 8, 30, 13, 32, 42, 325, DateTimeKind.Utc).AddTicks(220),
                             Description = "Regular User",
                             Name = "User",
-                            UpdatedAt = new DateTime(2025, 8, 30, 13, 43, 58, 518, DateTimeKind.Utc).AddTicks(6671)
+                            UpdatedAt = new DateTime(2025, 8, 30, 13, 32, 42, 325, DateTimeKind.Utc).AddTicks(220)
                         },
                         new
                         {
                             Id = 3,
-                            CreatedAt = new DateTime(2025, 8, 30, 13, 43, 58, 518, DateTimeKind.Utc).AddTicks(6672),
+                            CreatedAt = new DateTime(2025, 8, 30, 13, 32, 42, 325, DateTimeKind.Utc).AddTicks(221),
                             Description = "Ambulance Personnel",
                             Name = "Ambulance",
-                            UpdatedAt = new DateTime(2025, 8, 30, 13, 43, 58, 518, DateTimeKind.Utc).AddTicks(6673)
+                            UpdatedAt = new DateTime(2025, 8, 30, 13, 32, 42, 325, DateTimeKind.Utc).AddTicks(222)
                         },
                         new
                         {
                             Id = 4,
-                            CreatedAt = new DateTime(2025, 8, 30, 13, 43, 58, 518, DateTimeKind.Utc).AddTicks(6674),
+                            CreatedAt = new DateTime(2025, 8, 30, 13, 32, 42, 325, DateTimeKind.Utc).AddTicks(223),
                             Description = "Philippine National Police",
                             Name = "PNP",
-                            UpdatedAt = new DateTime(2025, 8, 30, 13, 43, 58, 518, DateTimeKind.Utc).AddTicks(6675)
+                            UpdatedAt = new DateTime(2025, 8, 30, 13, 32, 42, 325, DateTimeKind.Utc).AddTicks(223)
                         },
                         new
                         {
                             Id = 5,
-                            CreatedAt = new DateTime(2025, 8, 30, 13, 43, 58, 518, DateTimeKind.Utc).AddTicks(6676),
+                            CreatedAt = new DateTime(2025, 8, 30, 13, 32, 42, 325, DateTimeKind.Utc).AddTicks(224),
                             Description = "Bureau of Fire Protection",
                             Name = "BFP",
-                            UpdatedAt = new DateTime(2025, 8, 30, 13, 43, 58, 518, DateTimeKind.Utc).AddTicks(6676)
+                            UpdatedAt = new DateTime(2025, 8, 30, 13, 32, 42, 325, DateTimeKind.Utc).AddTicks(225)
                         });
                 });
 
@@ -598,17 +535,6 @@ namespace SIGLATAPI.Migrations
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.SetNull);
-
-                    b.Navigation("Identity");
-                });
-
-            modelBuilder.Entity("Craftmatrix.org.API.Models.ContactVerificationTokenDto", b =>
-                {
-                    b.HasOne("Craftmatrix.org.API.Models.IdentityDto", "Identity")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
 
                     b.Navigation("Identity");
                 });

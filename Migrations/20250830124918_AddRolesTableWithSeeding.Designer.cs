@@ -3,6 +3,7 @@ using System;
 using Craftmatrix.org.API.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace SIGLATAPI.Migrations
 {
     [DbContext(typeof(AppDBContext))]
-    partial class AppDBContextModelSnapshot : ModelSnapshot
+    [Migration("20250830124918_AddRolesTableWithSeeding")]
+    partial class AddRolesTableWithSeeding
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -28,46 +31,32 @@ namespace SIGLATAPI.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
                     b.Property<string>("Latitude")
                         .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)");
+                        .HasColumnType("text");
 
                     b.Property<string>("Longitude")
                         .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)");
+                        .HasColumnType("text");
 
-                    b.Property<DateTime?>("RespondedAt")
+                    b.Property<DateTime>("RespondedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<Guid?>("ResponderId")
+                    b.Property<Guid>("Responder")
                         .HasColumnType("uuid");
 
                     b.Property<string>("Status")
                         .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
+                        .HasColumnType("text");
 
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("UserId")
+                    b.Property<Guid>("Uid")
                         .HasColumnType("uuid");
 
                     b.Property<string>("What")
                         .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
+                        .HasColumnType("text");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("ResponderId");
-
-                    b.HasIndex("UserId");
 
                     b.ToTable("Alerts");
                 });
@@ -80,23 +69,18 @@ namespace SIGLATAPI.Migrations
 
                     b.Property<string>("Message")
                         .IsRequired()
-                        .HasMaxLength(1000)
-                        .HasColumnType("character varying(1000)");
+                        .HasColumnType("text");
 
-                    b.Property<Guid>("ReceiverId")
+                    b.Property<Guid>("Reciever")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid>("SenderId")
+                    b.Property<Guid>("Sender")
                         .HasColumnType("uuid");
 
                     b.Property<DateTime>("SentAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("ReceiverId");
-
-                    b.HasIndex("SenderId");
 
                     b.ToTable("Chat");
                 });
@@ -109,87 +93,25 @@ namespace SIGLATAPI.Migrations
 
                     b.Property<string>("ContactInformation")
                         .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
+                        .HasColumnType("text");
 
                     b.Property<string>("ContactType")
                         .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
+                        .HasColumnType("text");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Label")
                         .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
+                        .HasColumnType("text");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<Guid?>("UserId")
-                        .HasColumnType("uuid");
-
                     b.HasKey("Id");
-
-                    b.HasIndex("UserId");
 
                     b.ToTable("Contact");
-                });
-
-            modelBuilder.Entity("Craftmatrix.org.API.Models.ContactVerificationTokenDto", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("AttemptCount")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("ContactValue")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime>("ExpiresAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("IpAddress")
-                        .HasMaxLength(45)
-                        .HasColumnType("character varying(45)");
-
-                    b.Property<bool>("IsUsed")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("UserAgent")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("VerificationCode")
-                        .IsRequired()
-                        .HasMaxLength(10)
-                        .HasColumnType("character varying(10)");
-
-                    b.Property<string>("VerificationType")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)");
-
-                    b.Property<DateTime?>("VerifiedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("ContactVerificationTokens");
                 });
 
             modelBuilder.Entity("Craftmatrix.org.API.Models.CoordinatesDto", b =>
@@ -198,25 +120,20 @@ namespace SIGLATAPI.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<Guid>("DriverId")
+                        .HasColumnType("uuid");
+
                     b.Property<string>("Latitude")
                         .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)");
+                        .HasColumnType("text");
 
                     b.Property<string>("Longitude")
                         .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("text");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("UserId");
+                    b.HasIndex("DriverId");
 
                     b.ToTable("Coordinates");
                 });
@@ -242,9 +159,6 @@ namespace SIGLATAPI.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<DateTime?>("EmailVerifiedAt")
-                        .HasColumnType("timestamp with time zone");
-
                     b.Property<string>("FirstName")
                         .IsRequired()
                         .HasMaxLength(50)
@@ -257,12 +171,6 @@ namespace SIGLATAPI.Migrations
                     b.Property<string>("HashPass")
                         .IsRequired()
                         .HasColumnType("text");
-
-                    b.Property<bool>("IsEmailVerified")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("IsPhoneVerified")
-                        .HasColumnType("boolean");
 
                     b.Property<string>("LastName")
                         .IsRequired()
@@ -278,10 +186,11 @@ namespace SIGLATAPI.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<DateTime?>("PhoneVerifiedAt")
-                        .HasColumnType("timestamp with time zone");
+                    b.Property<string>("Role")
+                        .IsRequired()
+                        .HasColumnType("text");
 
-                    b.Property<int>("RoleId")
+                    b.Property<int?>("RoleDtoId")
                         .HasColumnType("integer");
 
                     b.Property<DateTime>("UpdatedAt")
@@ -289,9 +198,30 @@ namespace SIGLATAPI.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("RoleId");
+                    b.HasIndex("RoleDtoId");
 
                     b.ToTable("Identity");
+                });
+
+            modelBuilder.Entity("Craftmatrix.org.API.Models.LoginLogsDto", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("What")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("Who")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("LoginLogs");
                 });
 
             modelBuilder.Entity("Craftmatrix.org.API.Models.ReportDto", b =>
@@ -375,42 +305,42 @@ namespace SIGLATAPI.Migrations
                         new
                         {
                             Id = 1,
-                            CreatedAt = new DateTime(2025, 8, 30, 13, 43, 58, 518, DateTimeKind.Utc).AddTicks(6667),
+                            CreatedAt = new DateTime(2025, 8, 30, 12, 49, 17, 851, DateTimeKind.Utc).AddTicks(6176),
                             Description = "System Administrator",
                             Name = "Admin",
-                            UpdatedAt = new DateTime(2025, 8, 30, 13, 43, 58, 518, DateTimeKind.Utc).AddTicks(6668)
+                            UpdatedAt = new DateTime(2025, 8, 30, 12, 49, 17, 851, DateTimeKind.Utc).AddTicks(6177)
                         },
                         new
                         {
                             Id = 2,
-                            CreatedAt = new DateTime(2025, 8, 30, 13, 43, 58, 518, DateTimeKind.Utc).AddTicks(6671),
+                            CreatedAt = new DateTime(2025, 8, 30, 12, 49, 17, 851, DateTimeKind.Utc).AddTicks(6182),
                             Description = "Regular User",
                             Name = "User",
-                            UpdatedAt = new DateTime(2025, 8, 30, 13, 43, 58, 518, DateTimeKind.Utc).AddTicks(6671)
+                            UpdatedAt = new DateTime(2025, 8, 30, 12, 49, 17, 851, DateTimeKind.Utc).AddTicks(6183)
                         },
                         new
                         {
                             Id = 3,
-                            CreatedAt = new DateTime(2025, 8, 30, 13, 43, 58, 518, DateTimeKind.Utc).AddTicks(6672),
+                            CreatedAt = new DateTime(2025, 8, 30, 12, 49, 17, 851, DateTimeKind.Utc).AddTicks(6184),
                             Description = "Ambulance Personnel",
                             Name = "Ambulance",
-                            UpdatedAt = new DateTime(2025, 8, 30, 13, 43, 58, 518, DateTimeKind.Utc).AddTicks(6673)
+                            UpdatedAt = new DateTime(2025, 8, 30, 12, 49, 17, 851, DateTimeKind.Utc).AddTicks(6184)
                         },
                         new
                         {
                             Id = 4,
-                            CreatedAt = new DateTime(2025, 8, 30, 13, 43, 58, 518, DateTimeKind.Utc).AddTicks(6674),
+                            CreatedAt = new DateTime(2025, 8, 30, 12, 49, 17, 851, DateTimeKind.Utc).AddTicks(6185),
                             Description = "Philippine National Police",
                             Name = "PNP",
-                            UpdatedAt = new DateTime(2025, 8, 30, 13, 43, 58, 518, DateTimeKind.Utc).AddTicks(6675)
+                            UpdatedAt = new DateTime(2025, 8, 30, 12, 49, 17, 851, DateTimeKind.Utc).AddTicks(6186)
                         },
                         new
                         {
                             Id = 5,
-                            CreatedAt = new DateTime(2025, 8, 30, 13, 43, 58, 518, DateTimeKind.Utc).AddTicks(6676),
+                            CreatedAt = new DateTime(2025, 8, 30, 12, 49, 17, 851, DateTimeKind.Utc).AddTicks(6187),
                             Description = "Bureau of Fire Protection",
                             Name = "BFP",
-                            UpdatedAt = new DateTime(2025, 8, 30, 13, 43, 58, 518, DateTimeKind.Utc).AddTicks(6676)
+                            UpdatedAt = new DateTime(2025, 8, 30, 12, 49, 17, 851, DateTimeKind.Utc).AddTicks(6187)
                         });
                 });
 
@@ -424,6 +354,9 @@ namespace SIGLATAPI.Migrations
                         .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
+
+                    b.Property<Guid>("IdentityId")
+                        .HasColumnType("uuid");
 
                     b.Property<string>("IpAddress")
                         .IsRequired()
@@ -454,15 +387,35 @@ namespace SIGLATAPI.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("IdentityId");
+
                     b.HasIndex("UserId");
 
                     b.ToTable("UserLoginTracking");
                 });
 
-            modelBuilder.Entity("Craftmatrix.org.API.Models.VerificationDto", b =>
+            modelBuilder.Entity("Craftmatrix.org.API.Models.UserXYZDto", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Latitude")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Longitude")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("UserXYZ");
+                });
+
+            modelBuilder.Entity("Craftmatrix.org.API.Models.VerificationDto", b =>
+                {
+                    b.Property<Guid>("Id")
                         .HasColumnType("uuid");
 
                     b.Property<string>("B64Image")
@@ -474,165 +427,38 @@ namespace SIGLATAPI.Migrations
 
                     b.Property<string>("Remarks")
                         .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
+                        .HasColumnType("text");
 
                     b.Property<string>("Status")
                         .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)");
+                        .HasColumnType("text");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid");
-
                     b.Property<string>("VerificationType")
                         .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
+                        .HasColumnType("text");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("UserId");
 
                     b.ToTable("Verifications");
                 });
 
-            modelBuilder.Entity("Craftmatrix.org.API.Models.VerificationLogsDto", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
-
-                    b.Property<DateTime>("ActionTimestamp")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("AdminRemarks")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
-
-                    b.Property<Guid>("AdminUserId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("IpAddress")
-                        .HasMaxLength(45)
-                        .HasColumnType("character varying(45)");
-
-                    b.Property<string>("NewStatus")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)");
-
-                    b.Property<string>("PreviousStatus")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)");
-
-                    b.Property<string>("Reason")
-                        .HasMaxLength(1000)
-                        .HasColumnType("character varying(1000)");
-
-                    b.Property<string>("UserAgent")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
-
-                    b.Property<Guid>("VerificationId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("AdminUserId");
-
-                    b.HasIndex("VerificationId");
-
-                    b.ToTable("VerificationLogs");
-                });
-
-            modelBuilder.Entity("Craftmatrix.org.API.Models.AlertDto", b =>
-                {
-                    b.HasOne("Craftmatrix.org.API.Models.IdentityDto", "Responder")
-                        .WithMany()
-                        .HasForeignKey("ResponderId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.HasOne("Craftmatrix.org.API.Models.IdentityDto", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Responder");
-
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("Craftmatrix.org.API.Models.ChatDto", b =>
-                {
-                    b.HasOne("Craftmatrix.org.API.Models.IdentityDto", "ReceiverUser")
-                        .WithMany()
-                        .HasForeignKey("ReceiverId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("Craftmatrix.org.API.Models.IdentityDto", "SenderUser")
-                        .WithMany()
-                        .HasForeignKey("SenderId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("ReceiverUser");
-
-                    b.Navigation("SenderUser");
-                });
-
-            modelBuilder.Entity("Craftmatrix.org.API.Models.ContactDto", b =>
-                {
-                    b.HasOne("Craftmatrix.org.API.Models.IdentityDto", "Identity")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.Navigation("Identity");
-                });
-
-            modelBuilder.Entity("Craftmatrix.org.API.Models.ContactVerificationTokenDto", b =>
-                {
-                    b.HasOne("Craftmatrix.org.API.Models.IdentityDto", "Identity")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Identity");
-                });
-
             modelBuilder.Entity("Craftmatrix.org.API.Models.CoordinatesDto", b =>
                 {
-                    b.HasOne("Craftmatrix.org.API.Models.IdentityDto", "Identity")
+                    b.HasOne("Craftmatrix.org.API.Models.IdentityDto", null)
                         .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .HasForeignKey("DriverId")
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
-
-                    b.Navigation("Identity");
                 });
 
             modelBuilder.Entity("Craftmatrix.org.API.Models.IdentityDto", b =>
                 {
-                    b.HasOne("Craftmatrix.org.API.Models.RoleDto", "Role")
+                    b.HasOne("Craftmatrix.org.API.Models.RoleDto", null)
                         .WithMany("Users")
-                        .HasForeignKey("RoleId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Role");
+                        .HasForeignKey("RoleDtoId");
                 });
 
             modelBuilder.Entity("Craftmatrix.org.API.Models.ReportDto", b =>
@@ -648,8 +474,14 @@ namespace SIGLATAPI.Migrations
                 {
                     b.HasOne("Craftmatrix.org.API.Models.IdentityDto", "Identity")
                         .WithMany()
-                        .HasForeignKey("UserId")
+                        .HasForeignKey("IdentityId")
                         .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Craftmatrix.org.API.Models.IdentityDto", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Identity");
@@ -657,32 +489,11 @@ namespace SIGLATAPI.Migrations
 
             modelBuilder.Entity("Craftmatrix.org.API.Models.VerificationDto", b =>
                 {
-                    b.HasOne("Craftmatrix.org.API.Models.IdentityDto", "Identity")
+                    b.HasOne("Craftmatrix.org.API.Models.IdentityDto", null)
                         .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Identity");
-                });
-
-            modelBuilder.Entity("Craftmatrix.org.API.Models.VerificationLogsDto", b =>
-                {
-                    b.HasOne("Craftmatrix.org.API.Models.IdentityDto", "AdminIdentity")
-                        .WithMany()
-                        .HasForeignKey("AdminUserId")
+                        .HasForeignKey("Id")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
-
-                    b.HasOne("Craftmatrix.org.API.Models.VerificationDto", "Verification")
-                        .WithMany()
-                        .HasForeignKey("VerificationId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("AdminIdentity");
-
-                    b.Navigation("Verification");
                 });
 
             modelBuilder.Entity("Craftmatrix.org.API.Models.RoleDto", b =>
