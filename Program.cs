@@ -149,8 +149,13 @@ app.UseMiddleware<ErrorHandlingMiddleware>();
 app.UseCors(Origin);
 // Configure the HTTP request pipeline.
 app.UseSwagger();
-app.UseSwaggerUI();
+// app.UseSwaggerUI();
+app.UseSwaggerUI(c =>
+{
+    c.InjectStylesheet("/swagger-ui/SwaggerDark.css");
+});
 
+app.UseStaticFiles();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
