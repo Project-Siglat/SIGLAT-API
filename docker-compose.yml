@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  siglat-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: siglat-api
+    ports:
+      - "5000:80"
+    environment:
+      # Database Configuration - connects to external PostgreSQL
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      - DB_USER=${DB_USER}
+      - DB_PASS=${DB_PASS}
+      - DB_DB=${DB_DB}
+      
+      # JWT Configuration
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_ISSUER=${JWT_ISSUER}
+      - JWT_AUDIENCE=${JWT_AUDIENCE}
+      
+      # API Configuration
+      - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT:-Production}
+      - ASPNETCORE_URLS=http://+:80
+      
+      # CORS Origins
+      - CORS_ORIGINS=${CORS_ORIGINS}
+    depends_on: []
+    restart: unless-stopped
+    networks:
+      - siglat-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+networks:
+  siglat-network:
+    driver: bridge
+
+# Note: PostgreSQL is expected to be running externally
+# Configure your external PostgreSQL connection in the .env file:
+# DB_HOST=your-external-postgres-host
+# DB_PORT=5432
+# DB_USER=your-postgres-user
+# DB_PASS=your-postgres-password
+# DB_DB=siglat_db
