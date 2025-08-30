@@ -32,6 +32,9 @@ namespace Craftmatrix.org.API.Models
         [StringLength(200)]
         public string FailureReason { get; set; }
 
+        [StringLength(255)]
+        public string AttemptedEmail { get; set; }
+
         public bool IsActive { get; set; } = true;
 
         // Navigation property

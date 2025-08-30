@@ -116,48 +116,86 @@ namespace Craftmatrix.org.API.Controllers.Authentication
         [AllowAnonymous]
         public async Task<IActionResult> Login([FromBody] AuthDto request)
         {
-            var existingIdentity = await _db.GetDataByColumnAsync<IdentityDto>("Identity", "Email", request.Email);
-            var data = existingIdentity.FirstOrDefault();
-            if (data == null)
+            UserLoginTrackingDto loginTracking;
+            var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "Unknown";
+            var userAgent = HttpContext.Request.Headers["User-Agent"].ToString();
+
+            try
             {
-                return NotFound("User not found");
-            }
-            else
-            {
+                var existingIdentity = await _db.GetDataByColumnAsync<IdentityDto>("Identity", "Email", request.Email);
+                var data = existingIdentity.FirstOrDefault();
+                
+                if (data == null)
+                {
+                    // Log failed login attempt for non-existent user
+                    loginTracking = new UserLoginTrackingDto
+                    {
+                        Id = Guid.NewGuid(),
+                        UserId = Guid.Empty, // No user ID for non-existent user
+                        IpAddress = ipAddress,
+                        UserAgent = userAgent,
+                        LoginTimestamp = DateTime.UtcNow,
+                        LoginStatus = "Failed",
+                        FailureReason = "User not found",
+                        AttemptedEmail = request.Email
+                    };
+                    await _db.PostDataAsync<UserLoginTrackingDto>("UserLoginTracking", loginTracking, loginTracking.Id);
+                    
+                    return NotFound("User not found");
+                }
+
                 var verify = PasswordService.VerifyPassword(request.Password, data.HashPass);
                 if (verify)
                 {
                     var token = GenerateToken(data.Email, data.Id.ToString(), data.RoleId.ToString());
-                    UserLoginTrackingDto loginTracking = new UserLoginTrackingDto
+                    
+                    loginTracking = new UserLoginTrackingDto
                     {
                         Id = Guid.NewGuid(),
                         UserId = data.Id,
-                        IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "Unknown",
-                        UserAgent = HttpContext.Request.Headers["User-Agent"].ToString(),
+                        IpAddress = ipAddress,
+                        UserAgent = userAgent,
                         LoginTimestamp = DateTime.UtcNow,
                         LoginStatus = "Success"
                     };
                     await _db.PostDataAsync<UserLoginTrackingDto>("UserLoginTracking", loginTracking, loginTracking.Id);
-                    return Ok(new { roleId = data.RoleId, token });
-
+                    
+                    return Ok(new { roleId = data.RoleId, token, userId = data.Id });
                 }
                 else
                 {
-                    UserLoginTrackingDto loginTracking = new UserLoginTrackingDto
+                    loginTracking = new UserLoginTrackingDto
                     {
                         Id = Guid.NewGuid(),
                         UserId = data.Id,
-                        IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "Unknown",
-                        UserAgent = HttpContext.Request.Headers["User-Agent"].ToString(),
+                        IpAddress = ipAddress,
+                        UserAgent = userAgent,
                         LoginTimestamp = DateTime.UtcNow,
                         LoginStatus = "Failed",
                         FailureReason = "Wrong Password"
                     };
                     await _db.PostDataAsync<UserLoginTrackingDto>("UserLoginTracking", loginTracking, loginTracking.Id);
+                    
                     return BadRequest("Wrong Password");
                 }
-                // return Ok(new { pass, data.HashPass });
-
+            }
+            catch (Exception ex)
+            {
+                // Log system error
+                loginTracking = new UserLoginTrackingDto
+                {
+                    Id = Guid.NewGuid(),
+                    UserId = Guid.Empty,
+                    IpAddress = ipAddress,
+                    UserAgent = userAgent,
+                    LoginTimestamp = DateTime.UtcNow,
+                    LoginStatus = "Error",
+                    FailureReason = $"System error: {ex.Message}",
+                    AttemptedEmail = request.Email
+                };
+                await _db.PostDataAsync<UserLoginTrackingDto>("UserLoginTracking", loginTracking, loginTracking.Id);
+                
+                return StatusCode(500, "Login system error");
             }
         }
 
@@ -192,6 +230,176 @@ namespace Craftmatrix.org.API.Controllers.Authentication
 
             var token = tokenHandler.CreateToken(tokenDescriptor);
             return tokenHandler.WriteToken(token);
+        }
+
+        /// <summary>
+        /// Check if any admin account exists in the system
+        /// </summary>
+        /// <returns>Boolean indicating if admin exists</returns>
+        /// <response code="200">Check successful</response>
+        [HttpGet("admin-exists")]
+        [AllowAnonymous]
+        public async Task<IActionResult> CheckAdminExists()
+        {
+            try
+            {
+                var adminUsers = await _db.GetDataByColumnAsync<IdentityDto>("Identity", "RoleId", 1); // RoleId 1 = Admin
+                var exists = adminUsers.Any();
+                
+                return Ok(new { exists });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Error checking admin existence: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Create the first admin account
+        /// </summary>
+        /// <param name="request">Admin credentials</param>
+        /// <returns>Success message</returns>
+        /// <response code="200">Admin created successfully</response>
+        /// <response code="400">Admin already exists or validation error</response>
+        [HttpPost("create-admin")]
+        [AllowAnonymous]
+        public async Task<IActionResult> CreateAdmin([FromBody] AuthDto request)
+        {
+            try
+            {
+                // Check if admin already exists
+                var existingAdmins = await _db.GetDataByColumnAsync<IdentityDto>("Identity", "RoleId", 1);
+                if (existingAdmins.Any())
+                {
+                    return BadRequest("Admin account already exists");
+                }
+
+                // Validate email format
+                if (string.IsNullOrEmpty(request.Email) || !IsValidEmail(request.Email))
+                {
+                    return BadRequest("Valid email address is required");
+                }
+
+                // Validate password strength
+                if (string.IsNullOrEmpty(request.Password) || !IsValidPassword(request.Password))
+                {
+                    return BadRequest("Password must be at least 12 characters with uppercase, lowercase, numbers, and special characters");
+                }
+
+                // Check if email already exists
+                var existingIdentity = await _db.GetDataByColumnAsync<IdentityDto>("Identity", "Email", request.Email);
+                if (existingIdentity.Any())
+                {
+                    return BadRequest("Email already exists");
+                }
+
+                var adminIdentity = new IdentityDto
+                {
+                    Id = Guid.NewGuid(),
+                    FirstName = "Admin",
+                    MiddleName = "",
+                    LastName = "User",
+                    Address = "",
+                    Gender = "Other",
+                    PhoneNumber = "",
+                    DateOfBirth = DateTime.UtcNow.AddYears(-30), // Default age
+                    Email = request.Email,
+                    RoleId = 1, // Admin role
+                    IsEmailVerified = true, // Auto-verify admin email
+                    IsPhoneVerified = false,
+                    HashPass = PasswordService.HashPassword(request.Password),
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                };
+
+                var adminForDb = new
+                {
+                    adminIdentity.Id,
+                    adminIdentity.FirstName,
+                    adminIdentity.MiddleName,
+                    adminIdentity.LastName,
+                    adminIdentity.Address,
+                    adminIdentity.RoleId,
+                    adminIdentity.DateOfBirth,
+                    adminIdentity.Gender,
+                    adminIdentity.PhoneNumber,
+                    adminIdentity.Email,
+                    adminIdentity.IsEmailVerified,
+                    adminIdentity.IsPhoneVerified,
+                    EmailVerifiedAt = DateTime.UtcNow,
+                    PhoneVerifiedAt = (DateTime?)null,
+                    adminIdentity.HashPass,
+                    adminIdentity.CreatedAt,
+                    adminIdentity.UpdatedAt
+                };
+
+                await _db.PostDataAsync("Identity", adminForDb, adminIdentity.Id);
+
+                // Log the admin creation
+                var loginTracking = new UserLoginTrackingDto
+                {
+                    Id = Guid.NewGuid(),
+                    UserId = adminIdentity.Id,
+                    IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "Unknown",
+                    UserAgent = HttpContext.Request.Headers["User-Agent"].ToString(),
+                    LoginTimestamp = DateTime.UtcNow,
+                    LoginStatus = "Admin Created"
+                };
+                await _db.PostDataAsync<UserLoginTrackingDto>("UserLoginTracking", loginTracking, loginTracking.Id);
+
+                return Ok(new { message = "Admin account created successfully", adminId = adminIdentity.Id });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest($"Failed to create admin: {ex.Message}");
+            }
+        }
+
+        private bool IsValidEmail(string email)
+        {
+            try
+            {
+                var addr = new System.Net.Mail.MailAddress(email);
+                return addr.Address == email;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        private bool IsValidPassword(string password)
+        {
+            if (string.IsNullOrEmpty(password) || password.Length < 12)
+                return false;
+
+            bool hasUpper = password.Any(char.IsUpper);
+            bool hasLower = password.Any(char.IsLower);
+            bool hasDigit = password.Any(char.IsDigit);
+            bool hasSpecial = password.Any(ch => !char.IsLetterOrDigit(ch));
+
+            return hasUpper && hasLower && hasDigit && hasSpecial;
+        }
+
+        /// <summary>
+        /// Get login tracking logs (Admin only)
+        /// </summary>
+        /// <returns>Login tracking data</returns>
+        [HttpGet("login-logs")]
+        [Authorize(Roles = "1")] // Admin role only
+        public async Task<IActionResult> GetLoginLogs()
+        {
+            try
+            {
+                var logs = await _db.GetDataAsync<UserLoginTrackingDto>("UserLoginTracking");
+                var sortedLogs = logs.OrderByDescending(l => l.LoginTimestamp).Take(100); // Last 100 entries
+                
+                return Ok(sortedLogs);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Error retrieving login logs: {ex.Message}");
+            }
         }
 
         /// <summary>
