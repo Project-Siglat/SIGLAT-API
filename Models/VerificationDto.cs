@@ -47,4 +47,19 @@ namespace Craftmatrix.org.API.Models
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
     }
+
+    // Email OTP DTOs for frontend compatibility
+    public class SendEmailOtpDto
+    {
+        [Required]
+        [EmailAddress]
+        public string Email { get; set; }
+    }
+
+    public class VerifyEmailDto
+    {
+        [Required]
+        [StringLength(6, MinimumLength = 6)]
+        public string VerificationCode { get; set; }
+    }
 }

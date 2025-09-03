@@ -94,6 +94,7 @@ namespace Craftmatrix.org.API.Services
         if (_initialized) return;
 
         await EnsureDatabaseExistsAsync();
+        await EnsureTablesExistAsync();
         _initialized = true;
         _logger.LogInformation("Database initialization completed");
     }
@@ -143,6 +144,79 @@ namespace Craftmatrix.org.API.Services
         catch (Exception ex)
         {
             _logger.LogError(ex, $"Failed to create database '{_databaseName}'");
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Ensures that required tables exist, creates them if they don't
+    /// </summary>
+    private async Task EnsureTablesExistAsync()
+    {
+        try
+        {
+            using (var connection = await CreateConnectionAsync())
+            {
+                // Create AdminVerificationTokens table if it doesn't exist
+                string createAdminTokensTable = @"
+                    CREATE TABLE IF NOT EXISTS ""AdminVerificationTokens"" (
+                        ""Id"" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                        ""Email"" VARCHAR(500) NOT NULL,
+                        ""VerificationCode"" VARCHAR(10) NOT NULL,
+                        ""CreatedAt"" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                        ""ExpiresAt"" TIMESTAMP WITH TIME ZONE NOT NULL,
+                        ""IsUsed"" BOOLEAN NOT NULL DEFAULT FALSE,
+                        ""VerifiedAt"" TIMESTAMP WITH TIME ZONE NULL,
+                        ""IpAddress"" VARCHAR(45) NULL,
+                        ""UserAgent"" VARCHAR(500) NULL,
+                        ""AttemptCount"" INTEGER NOT NULL DEFAULT 0
+                    )";
+
+                await connection.ExecuteAsync(createAdminTokensTable);
+                _logger.LogInformation("AdminVerificationTokens table ensured to exist");
+
+                // Create ContactVerificationTokens table if it doesn't exist
+                string createContactTokensTable = @"
+                    CREATE TABLE IF NOT EXISTS ""ContactVerificationTokens"" (
+                        ""Id"" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                        ""UserId"" UUID NOT NULL,
+                        ""VerificationType"" VARCHAR(50) NOT NULL,
+                        ""ContactValue"" VARCHAR(500) NOT NULL,
+                        ""VerificationCode"" VARCHAR(10) NOT NULL,
+                        ""CreatedAt"" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                        ""ExpiresAt"" TIMESTAMP WITH TIME ZONE NOT NULL,
+                        ""IsUsed"" BOOLEAN NOT NULL DEFAULT FALSE,
+                        ""VerifiedAt"" TIMESTAMP WITH TIME ZONE NULL,
+                        ""IpAddress"" VARCHAR(45) NULL,
+                        ""UserAgent"" VARCHAR(500) NULL,
+                        ""AttemptCount"" INTEGER NOT NULL DEFAULT 0
+                    )";
+
+                await connection.ExecuteAsync(createContactTokensTable);
+                _logger.LogInformation("ContactVerificationTokens table ensured to exist");
+
+                // Create RefreshTokens table if it doesn't exist
+                string createRefreshTokensTable = @"
+                    CREATE TABLE IF NOT EXISTS ""RefreshTokens"" (
+                        ""Id"" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                        ""UserId"" UUID NOT NULL,
+                        ""Token"" VARCHAR(1000) NOT NULL,
+                        ""CreatedAt"" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                        ""UpdatedAt"" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                        ""ExpiresAt"" TIMESTAMP WITH TIME ZONE NOT NULL,
+                        ""IsRevoked"" BOOLEAN NOT NULL DEFAULT FALSE,
+                        ""RevokedAt"" TIMESTAMP WITH TIME ZONE NULL,
+                        ""IpAddress"" VARCHAR(45) NULL,
+                        ""UserAgent"" VARCHAR(500) NULL
+                    )";
+
+                await connection.ExecuteAsync(createRefreshTokensTable);
+                _logger.LogInformation("RefreshTokens table ensured to exist");
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to create required tables");
             throw;
         }
     }

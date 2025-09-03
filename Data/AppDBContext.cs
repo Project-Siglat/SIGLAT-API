@@ -22,6 +22,8 @@ namespace Craftmatrix.org.API.Data
         public DbSet<ReportDto> Reports { get; set; }
         public DbSet<UserLoginTrackingDto> UserLoginTracking { get; set; }
         public DbSet<RefreshTokenDto> RefreshTokens { get; set; }
+        public DbSet<VerificationTypeDto> VerificationTypes { get; set; }
+        public DbSet<AccountVerificationDto> AccountVerifications { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -174,6 +176,71 @@ namespace Craftmatrix.org.API.Data
                 .HasForeignKey(c => c.UserId)
                 .OnDelete(DeleteBehavior.SetNull);
 
+            // VerificationTypes configuration
+            modelBuilder.Entity<VerificationTypeDto>()
+                .HasKey(vt => vt.Id);
+
+            modelBuilder.Entity<VerificationTypeDto>()
+                .ToTable("VerificationTypes");
+
+            modelBuilder.Entity<VerificationTypeDto>()
+                .Property(vt => vt.Name)
+                .HasMaxLength(50)
+                .IsRequired();
+
+            modelBuilder.Entity<VerificationTypeDto>()
+                .Property(vt => vt.Description)
+                .HasMaxLength(200);
+
+            // AccountVerifications configuration
+            modelBuilder.Entity<AccountVerificationDto>()
+                .HasKey(av => av.Id);
+
+            modelBuilder.Entity<AccountVerificationDto>()
+                .ToTable("AccountVerifications");
+
+            // AccountVerifications -> Identity (User) relationship
+            modelBuilder.Entity<AccountVerificationDto>()
+                .HasOne<IdentityDto>()
+                .WithMany()
+                .HasForeignKey(av => av.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // AccountVerifications -> VerificationTypes relationship
+            modelBuilder.Entity<AccountVerificationDto>()
+                .HasOne<VerificationTypeDto>()
+                .WithMany()
+                .HasForeignKey(av => av.VerificationTypeId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // AccountVerifications -> Identity (Reviewer) relationship
+            modelBuilder.Entity<AccountVerificationDto>()
+                .HasOne<IdentityDto>()
+                .WithMany()
+                .HasForeignKey(av => av.ReviewedByUserId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            modelBuilder.Entity<AccountVerificationDto>()
+                .Property(av => av.DocumentNumber)
+                .HasMaxLength(200);
+
+            modelBuilder.Entity<AccountVerificationDto>()
+                .Property(av => av.DocumentName)
+                .HasMaxLength(100);
+
+            modelBuilder.Entity<AccountVerificationDto>()
+                .Property(av => av.ImageMimeType)
+                .HasMaxLength(50);
+
+            modelBuilder.Entity<AccountVerificationDto>()
+                .Property(av => av.AdminNotes)
+                .HasMaxLength(500);
+
+            modelBuilder.Entity<AccountVerificationDto>()
+                .Property(av => av.Status)
+                .HasMaxLength(20)
+                .IsRequired();
+
             // Seed default roles
             modelBuilder.Entity<RoleDto>().HasData(
                 new { Id = 1, Name = "Admin", Description = "System Administrator", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow },
@@ -181,6 +248,13 @@ namespace Craftmatrix.org.API.Data
                 new { Id = 3, Name = "Ambulance", Description = "Ambulance Personnel", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow },
                 new { Id = 4, Name = "PNP", Description = "Philippine National Police", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow },
                 new { Id = 5, Name = "BFP", Description = "Bureau of Fire Protection", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow }
+            );
+
+            // Seed default verification types
+            modelBuilder.Entity<VerificationTypeDto>().HasData(
+                new { Id = 1, Name = "Passport", Description = "Philippine Passport", IsActive = true, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow },
+                new { Id = 2, Name = "National ID", Description = "Philippine National ID (PhilID)", IsActive = true, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow },
+                new { Id = 3, Name = "Student ID", Description = "Valid Student ID from Educational Institution", IsActive = true, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow }
             );
         }
     }

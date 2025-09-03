@@ -33,19 +33,88 @@ graph TB
 
 ## Quick Start
 
+### Prerequisites
+- .NET 8.0 SDK
+- PostgreSQL 12+
+- Resend.com account (for email services)
+
+### Environment Setup
+
+1. **Clone the repository**
 ```bash
-# Clone and setup
 git clone git@github.com:Siglat/SIGLAT-API.git
 cd SIGLAT-API
+```
+
+2. **Install dependencies**
+```bash
 dotnet restore
+```
 
-# Configure environment
-cp .env.example .env  # Edit with your settings
+3. **Configure environment variables**
+```bash
+cp .env.example .env
+```
 
-# Run migrations and start
-dotnet ef database update
+Edit the `.env` file with your configuration:
+
+```env
+# Database Configuration
+DB_HOST=localhost
+DB_PORT=5432
+DB_USER=postgres
+DB_PASS=your-database-password
+DB_DB=siglat-localdb
+
+# JWT Configuration (IMPORTANT: Change in production!)
+JWT_SECRET=your-super-secret-jwt-key-minimum-32-characters
+JWT_ISSUER=siglat.app
+JWT_AUDIENCE=siglat-api
+
+# Email Service (Get API key from https://resend.com/api-keys)
+RESEND_API_KEY=re_your_resend_api_key_here
+
+# API Configuration
+ASPNETCORE_ENVIRONMENT=Development
+ASPNETCORE_URLS=http://localhost:5000
+
+# CORS Origins
+CORS_ORIGINS=http://localhost:2424,http://localhost:2425,http://localhost:2426
+```
+
+4. **Setup PostgreSQL Database**
+```bash
+# Create database (if not exists)
+createdb siglat-localdb
+
+# The application will automatically create tables on first run
+```
+
+5. **Run the application**
+```bash
 dotnet run
 ```
+
+6. **Verify installation**
+- API: http://localhost:5000
+- Swagger Documentation: http://localhost:5000/swagger
+
+### Environment Variables Reference
+
+| Variable | Required | Description | Example |
+|----------|----------|-------------|---------|
+| `DB_HOST` | ✅ | PostgreSQL host | `localhost` |
+| `DB_PORT` | ✅ | PostgreSQL port | `5432` |
+| `DB_USER` | ✅ | Database username | `postgres` |
+| `DB_PASS` | ✅ | Database password | `your-password` |
+| `DB_DB` | ✅ | Database name | `siglat-localdb` |
+| `JWT_SECRET` | ✅ | JWT signing key (32+ chars) | `your-secret-key` |
+| `JWT_ISSUER` | ✅ | JWT issuer | `siglat.app` |
+| `JWT_AUDIENCE` | ✅ | JWT audience | `siglat-api` |
+| `RESEND_API_KEY` | ✅ | Resend.com API key | `re_xxxx` |
+| `ASPNETCORE_ENVIRONMENT` | ❌ | Environment | `Development` |
+| `ASPNETCORE_URLS` | ❌ | Server URLs | `http://localhost:5000` |
+| `CORS_ORIGINS` | ❌ | Allowed origins | `http://localhost:3000` |
 
 ## Tech Stack
 
@@ -194,13 +263,30 @@ erDiagram
     Reports }o--|| Alert : triggers
 ```
 
-Create `.env` file:
+Create `.env` file with the following variables:
 
 ```env
-JWT_SECRET=your-256-bit-secret-key
-JWT_ISSUER=SIGLAT-API
-JWT_AUDIENCE=SIGLAT-Client
-DATABASE_URL=Host=localhost;Database=siglat;Username=postgres;Password=password
+# Database Configuration
+DB_HOST=localhost
+DB_PORT=5432
+DB_USER=postgres
+DB_PASS=your-database-password
+DB_DB=siglat-localdb
+
+# JWT Configuration (IMPORTANT: Change in production!)
+JWT_SECRET=your-super-secret-jwt-key-minimum-32-characters
+JWT_ISSUER=siglat.app
+JWT_AUDIENCE=siglat-api
+
+# Email Service Configuration
+RESEND_API_KEY=re_your_resend_api_key_here
+
+# API Configuration
+ASPNETCORE_ENVIRONMENT=Development
+ASPNETCORE_URLS=http://localhost:5000
+
+# CORS Origins
+CORS_ORIGINS=http://localhost:2424,http://localhost:2425,http://localhost:2426
 ```
 
 ## Development

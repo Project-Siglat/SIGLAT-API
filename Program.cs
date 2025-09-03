@@ -25,6 +25,7 @@ builder.Services.Configure<ApiBehaviorOptions>(options =>
 });
 
 builder.Services.AddSingleton<IPostgreService, PostgreService>();
+builder.Services.AddScoped<IEmailService, ResendEmailService>();
 
 builder.Services.AddDbContext<AppDBContext>((serviceProvider, options) =>
 {
@@ -41,9 +42,7 @@ builder.Services.AddCors(options =>
                            policy.WithOrigins(
                                "http://localhost:2424",
                                "http://localhost:2425", 
-                               "http://localhost:2426",
-                               "https://siglatdev.craftmatrix.org",
-                               "https://siglat.craftmatrix.org")
+                               "http://localhost:2426")
                               .AllowAnyHeader()
                               .AllowAnyMethod()
                               .AllowCredentials();
@@ -122,7 +121,14 @@ builder.Services.AddSwaggerGen(c =>
     // c.EnableAnnotations();
 });
 
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        // Configure DateTime serialization to use ISO 8601 format
+        options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
+        // Use default DateTime format which is ISO 8601
+        options.JsonSerializerOptions.PropertyNamingPolicy = null; // Keep property names as-is
+    });
 builder.Services.AddHttpClient();
 
 var key = Encoding.ASCII.GetBytes(Environment.GetEnvironmentVariable("JWT_SECRET"));

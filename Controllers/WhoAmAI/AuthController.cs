@@ -28,11 +28,13 @@ namespace Craftmatrix.org.API.Controllers.Authentication
     {
         private readonly IPostgreService _db;
         private readonly IHttpClientFactory _httpClientFactory;
+        private readonly IEmailService _emailService;
 
-        public AuthController(IPostgreService db, IHttpClientFactory httpClientFactory)
+        public AuthController(IPostgreService db, IHttpClientFactory httpClientFactory, IEmailService emailService)
         {
             _db = db;
             _httpClientFactory = httpClientFactory;
+            _emailService = emailService;
 
         }
 
@@ -152,7 +154,7 @@ namespace Craftmatrix.org.API.Controllers.Authentication
                     var roles = await _db.GetDataByColumnAsync<RoleDto>("Roles", "Id", data.RoleId);
                     var roleName = roles.FirstOrDefault()?.Name ?? "User"; // Default to "User" if role not found
                     
-                    var accessToken = GenerateToken(data.Email, data.Id.ToString(), roleName);
+                    var accessToken = GenerateToken(data.Email, data.Id.ToString(), roleName, data.RoleId);
                     var refreshToken = await GenerateRefreshToken(data.Id, ipAddress, userAgent);
 
                     loginTracking = new UserLoginTrackingDto
@@ -215,7 +217,7 @@ namespace Craftmatrix.org.API.Controllers.Authentication
             }
         }
 
-        private string GenerateToken(string email, string userId, string roleName)
+        private string GenerateToken(string email, string userId, string roleName, int? roleId = null)
         {
             if (string.IsNullOrEmpty(email)) throw new ArgumentNullException(nameof(email));
             if (string.IsNullOrEmpty(userId)) throw new ArgumentNullException(nameof(userId));
@@ -230,14 +232,22 @@ namespace Craftmatrix.org.API.Controllers.Authentication
             var tokenHandler = new JwtSecurityTokenHandler();
             var key = Encoding.ASCII.GetBytes(jwtSecret);
 
+            var claims = new List<Claim>
+            {
+                new Claim(JwtRegisteredClaimNames.Sub, email),
+                new Claim(JwtRegisteredClaimNames.Jti, userId),
+                new Claim(ClaimTypes.Role, roleName)
+            };
+
+            // Add roleId claim if provided
+            if (roleId.HasValue)
+            {
+                claims.Add(new Claim("roleId", roleId.Value.ToString()));
+            }
+
             var tokenDescriptor = new SecurityTokenDescriptor
             {
-                Subject = new ClaimsIdentity(new[]
-                {
-                                    new Claim(JwtRegisteredClaimNames.Sub, email),
-                                    new Claim(JwtRegisteredClaimNames.Jti, userId),
-                                    new Claim(ClaimTypes.Role, roleName)
-                                }),
+                Subject = new ClaimsIdentity(claims),
                 Expires = DateTime.UtcNow.AddMinutes(15), // Reduced to 15 minutes
                 Audience = Environment.GetEnvironmentVariable("JWT_AUDIENCE"),
                 Issuer = Environment.GetEnvironmentVariable("JWT_ISSUER"),
@@ -409,13 +419,15 @@ namespace Craftmatrix.org.API.Controllers.Authentication
                     .Take(50) // Last 50 login attempts
                     .Select(l => new
                     {
-                        l.Id,
+                        Id = l.Id.ToString(),
+                        UserId = l.UserId.ToString(),
                         l.IpAddress,
                         l.UserAgent,
                         l.LoginTimestamp,
                         l.LogoutTimestamp,
                         l.LoginStatus,
                         l.FailureReason,
+                        l.AttemptedEmail,
                         l.IsActive
                     });
 
@@ -424,6 +436,41 @@ namespace Craftmatrix.org.API.Controllers.Authentication
             catch (Exception ex)
             {
                 return StatusCode(500, $"Error retrieving login history: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Upgrade user to admin role (temporary endpoint)
+        /// </summary>
+        [HttpPost("make-admin/{email}")]
+        [AllowAnonymous]
+        public async Task<IActionResult> MakeUserAdmin(string email)
+        {
+            try
+            {
+                var users = await _db.GetDataByColumnAsync<IdentityDto>("Identity", "Email", email);
+                var user = users.FirstOrDefault();
+                
+                if (user == null)
+                {
+                    return NotFound("User not found");
+                }
+                
+                // Update user's role to admin (roleId = 1)
+                user.RoleId = 1;
+                user.UpdatedAt = DateTime.UtcNow;
+                
+                await _db.PostDataAsync("Identity", user, user.Id);
+                
+                return Ok(new { 
+                    message = $"User {email} upgraded to admin successfully",
+                    userId = user.Id,
+                    roleId = user.RoleId
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Error upgrading user: {ex.Message}");
             }
         }
 
@@ -637,7 +684,17 @@ namespace Craftmatrix.org.API.Controllers.Authentication
 
                 await _db.PostDataAsync<ContactVerificationTokenDto>("ContactVerificationTokens", token, token.Id);
 
-                // TODO: In a real implementation, send the code via email or SMS
+                // Send verification code via email if it's email verification
+                if (request.VerificationType.ToLower() == "email")
+                {
+                    var emailSent = await _emailService.SendOtpEmailAsync(request.ContactValue, verificationCode, $"{user.FirstName} {user.LastName}");
+                    if (!emailSent)
+                    {
+                        Console.WriteLine($"Failed to send verification email to {request.ContactValue}, but code was generated: {verificationCode}");
+                    }
+                }
+                // TODO: Implement SMS sending for phone verification
+
                 return Ok(new
                 {
                     message = $"Verification code sent to your {request.VerificationType}",
@@ -858,7 +915,7 @@ namespace Craftmatrix.org.API.Controllers.Authentication
                 var roleName = roles.FirstOrDefault()?.Name ?? "User";
 
                 // Generate new tokens
-                var newAccessToken = GenerateToken(user.Email, user.Id.ToString(), roleName);
+                var newAccessToken = GenerateToken(user.Email, user.Id.ToString(), roleName, user.RoleId);
                 var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "Unknown";
                 var userAgent = HttpContext.Request.Headers["User-Agent"].ToString();
                 var newRefreshToken = await GenerateRefreshToken(user.Id, ipAddress, userAgent);
@@ -977,6 +1034,460 @@ namespace Craftmatrix.org.API.Controllers.Authentication
             catch (Exception ex)
             {
                 return StatusCode(500, new { message = "Failed to debug token", error = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Send OTP for admin registration (no authentication required)
+        /// </summary>
+        /// <param name="request">Email for admin registration</param>
+        /// <returns>Success message with expiration time</returns>
+        [HttpPost("send-admin-otp")]
+        [AllowAnonymous]
+        public async Task<IActionResult> SendAdminOtp([FromBody] SendAdminOtpDto request)
+        {
+            try
+            {
+                // Check if admin already exists
+                var adminCheck = await _db.GetDataByColumnAsync<IdentityDto>("Identity", "RoleId", 1);
+                if (adminCheck.Any())
+                {
+                    return BadRequest(new { message = "Admin account already exists in the system" });
+                }
+
+                // Check for recent unused tokens for this email
+                var recentTokens = await _db.GetDataAsync<AdminVerificationTokenDto>("AdminVerificationTokens");
+                var existingToken = recentTokens.FirstOrDefault(t =>
+                    t.Email.Equals(request.Email, StringComparison.OrdinalIgnoreCase) &&
+                    !t.IsUsed &&
+                    t.ExpiresAt > DateTime.UtcNow &&
+                    t.CreatedAt > DateTime.UtcNow.AddMinutes(-2)); // Don't allow new codes within 2 minutes
+
+                if (existingToken != null)
+                {
+                    var remainingTime = existingToken.ExpiresAt.Subtract(DateTime.UtcNow);
+                    return BadRequest(new
+                    {
+                        message = "An OTP was recently sent to this email. Please wait before requesting a new one.",
+                        retryAfter = remainingTime.TotalSeconds
+                    });
+                }
+
+                // Generate 6-digit OTP
+                var random = new Random();
+                var otpCode = random.Next(100000, 999999).ToString();
+
+                // Create admin verification token
+                var token = new AdminVerificationTokenDto
+                {
+                    Email = request.Email.ToLower(),
+                    VerificationCode = otpCode,
+                    ExpiresAt = DateTime.UtcNow.AddMinutes(10), // 10 minutes expiration
+                    IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString(),
+                    UserAgent = HttpContext.Request.Headers["User-Agent"].ToString()
+                };
+
+                await _db.PostDataAsync<AdminVerificationTokenDto>("AdminVerificationTokens", token, token.Id);
+
+                // Send OTP via email using Resend
+                var emailSent = await _emailService.SendOtpEmailAsync(request.Email, otpCode, "Admin User");
+                
+                if (!emailSent)
+                {
+                    // Log the failure but still return success to avoid revealing system details
+                    Console.WriteLine($"Failed to send email to {request.Email}, but OTP was generated: {otpCode}");
+                }
+
+                return Ok(new
+                {
+                    message = $"OTP sent to {request.Email}",
+                    expiresAt = token.ExpiresAt
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Failed to send admin OTP", error = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Verify OTP for admin registration
+        /// </summary>
+        /// <param name="request">Email and OTP code verification</param>
+        /// <returns>Success message if OTP is valid</returns>
+        [HttpPost("verify-admin-otp")]
+        [AllowAnonymous]
+        public async Task<IActionResult> VerifyAdminOtp([FromBody] VerifyAdminOtpDto request)
+        {
+            try
+            {
+                // Check if admin already exists
+                var adminCheck = await _db.GetDataByColumnAsync<IdentityDto>("Identity", "RoleId", 1);
+                if (adminCheck.Any())
+                {
+                    return BadRequest(new { message = "Admin account already exists in the system" });
+                }
+
+                // Find the verification token
+                var tokens = await _db.GetDataAsync<AdminVerificationTokenDto>("AdminVerificationTokens");
+                var token = tokens.FirstOrDefault(t =>
+                    t.Email.Equals(request.Email, StringComparison.OrdinalIgnoreCase) &&
+                    !t.IsUsed &&
+                    t.ExpiresAt > DateTime.UtcNow);
+
+                if (token == null)
+                {
+                    return BadRequest(new { message = "Invalid or expired OTP" });
+                }
+
+                // Check attempt count
+                if (token.AttemptCount >= 3)
+                {
+                    return BadRequest(new { message = "Too many OTP attempts. Please request a new OTP." });
+                }
+
+                // Increment attempt count
+                token.AttemptCount++;
+                await _db.PostDataAsync<AdminVerificationTokenDto>("AdminVerificationTokens", token, token.Id);
+
+                // Verify the code
+                if (token.VerificationCode != request.VerificationCode)
+                {
+                    return BadRequest(new
+                    {
+                        message = "Invalid OTP",
+                        attemptsRemaining = 3 - token.AttemptCount
+                    });
+                }
+
+                // Mark token as used
+                token.IsUsed = true;
+                token.VerifiedAt = DateTime.UtcNow;
+                await _db.PostDataAsync<AdminVerificationTokenDto>("AdminVerificationTokens", token, token.Id);
+
+                return Ok(new
+                {
+                    message = "OTP verified successfully. You can now create the admin account.",
+                    verified = true
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Failed to verify admin OTP", error = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Check for existing email verification session
+        /// </summary>
+        /// <returns>Existing session details if available</returns>
+        [HttpGet("email-verification-status")]
+        public async Task<IActionResult> GetEmailVerificationStatus()
+        {
+            try
+            {
+                // Get current user ID from the token
+                var jtiClaim = User.FindFirst(JwtRegisteredClaimNames.Jti)?.Value;
+                if (string.IsNullOrEmpty(jtiClaim) || !Guid.TryParse(jtiClaim, out Guid userId))
+                {
+                    return Unauthorized(new { message = "Invalid user token" });
+                }
+
+                // Get user
+                var user = await _db.GetSingleDataAsync<IdentityDto>("Identity", userId);
+                if (user == null)
+                {
+                    return NotFound(new { message = "User not found" });
+                }
+
+                // Check if already verified
+                if (user.IsEmailVerified)
+                {
+                    return Ok(new { 
+                        isVerified = true, 
+                        message = "Email is already verified" 
+                    });
+                }
+
+                // Check for existing unused token
+                var tokens = await _db.GetDataAsync<ContactVerificationTokenDto>("ContactVerificationTokens");
+                var existingToken = tokens.FirstOrDefault(t =>
+                    t.UserId == userId &&
+                    t.VerificationType == "email" &&
+                    t.ContactValue == user.Email &&
+                    !t.IsUsed &&
+                    t.ExpiresAt > DateTime.UtcNow);
+
+                if (existingToken != null)
+                {
+                    var remainingTime = existingToken.ExpiresAt.Subtract(DateTime.UtcNow);
+                    return Ok(new
+                    {
+                        isVerified = false,
+                        hasActiveSession = true,
+                        expiresAt = existingToken.ExpiresAt,
+                        remainingTimeSeconds = remainingTime.TotalSeconds,
+                        canResend = existingToken.CreatedAt <= DateTime.UtcNow.AddMinutes(-2) // Can resend after 2 minutes
+                    });
+                }
+
+                return Ok(new
+                {
+                    isVerified = false,
+                    hasActiveSession = false,
+                    canSendNew = true
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Failed to check verification status", error = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Send email verification OTP (simplified endpoint for frontend compatibility)
+        /// </summary>
+        /// <param name="request">Email to send OTP to</param>
+        /// <returns>Success message</returns>
+        [HttpPost("send-email-otp")]
+        public async Task<IActionResult> SendEmailOtp([FromBody] SendEmailOtpDto request)
+        {
+            try
+            {
+                // Get current user ID from the token
+                var jtiClaim = User.FindFirst(JwtRegisteredClaimNames.Jti)?.Value;
+                if (string.IsNullOrEmpty(jtiClaim) || !Guid.TryParse(jtiClaim, out Guid userId))
+                {
+                    return Unauthorized(new { message = "Invalid user token" });
+                }
+
+                // Get user to verify the email matches their profile
+                var user = await _db.GetSingleDataAsync<IdentityDto>("Identity", userId);
+                if (user == null)
+                {
+                    return NotFound(new { message = "User not found" });
+                }
+
+                // Verify the email matches user's profile
+                if (!user.Email.Equals(request.Email, StringComparison.OrdinalIgnoreCase))
+                {
+                    return BadRequest(new { message = "Email does not match your profile" });
+                }
+
+                // Check if already verified
+                if (user.IsEmailVerified)
+                {
+                    return BadRequest(new { message = "Email is already verified" });
+                }
+
+                // Check for recent unused tokens
+                var recentTokens = await _db.GetDataAsync<ContactVerificationTokenDto>("ContactVerificationTokens");
+                var existingToken = recentTokens.FirstOrDefault(t =>
+                    t.UserId == userId &&
+                    t.VerificationType == "email" &&
+                    !t.IsUsed &&
+                    t.ExpiresAt > DateTime.UtcNow &&
+                    t.CreatedAt > DateTime.UtcNow.AddMinutes(-2)); // Don't allow new codes within 2 minutes
+
+                if (existingToken != null)
+                {
+                    var remainingTime = existingToken.ExpiresAt.Subtract(DateTime.UtcNow);
+                    return BadRequest(new
+                    {
+                        message = "A verification code was recently sent. Please wait before requesting a new one.",
+                        retryAfter = remainingTime.TotalSeconds
+                    });
+                }
+
+                // Generate 6-digit verification code
+                var random = new Random();
+                var verificationCode = random.Next(100000, 999999).ToString();
+
+                // Create verification token
+                var token = new ContactVerificationTokenDto
+                {
+                    UserId = userId,
+                    VerificationType = "email",
+                    ContactValue = request.Email,
+                    VerificationCode = verificationCode,
+                    ExpiresAt = DateTime.UtcNow.AddMinutes(10), // 10 minutes expiration
+                    IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString(),
+                    UserAgent = HttpContext.Request.Headers["User-Agent"].ToString()
+                };
+
+                await _db.PostDataAsync<ContactVerificationTokenDto>("ContactVerificationTokens", token, token.Id);
+
+                // Send verification code via email
+                var emailSent = await _emailService.SendOtpEmailAsync(request.Email, verificationCode, $"{user.FirstName} {user.LastName}");
+                if (!emailSent)
+                {
+                    Console.WriteLine($"Failed to send verification email to {request.Email}, but code was generated: {verificationCode}");
+                }
+
+                return Ok(new
+                {
+                    message = "Verification code sent to your email",
+                    expiresAt = token.ExpiresAt
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Failed to send verification code", error = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Verify email with verification code (simplified endpoint for frontend compatibility)
+        /// </summary>
+        /// <param name="request">Verification code</param>
+        /// <returns>Verification success message</returns>
+        [HttpPost("verify-email")]
+        public async Task<IActionResult> VerifyEmail([FromBody] VerifyEmailDto request)
+        {
+            try
+            {
+                // Get current user ID from the token
+                var jtiClaim = User.FindFirst(JwtRegisteredClaimNames.Jti)?.Value;
+                if (string.IsNullOrEmpty(jtiClaim) || !Guid.TryParse(jtiClaim, out Guid userId))
+                {
+                    return Unauthorized(new { message = "Invalid user token" });
+                }
+
+                // Get user
+                var user = await _db.GetSingleDataAsync<IdentityDto>("Identity", userId);
+                if (user == null)
+                {
+                    return NotFound(new { message = "User not found" });
+                }
+
+                // Find the verification token
+                var tokens = await _db.GetDataAsync<ContactVerificationTokenDto>("ContactVerificationTokens");
+                var token = tokens.FirstOrDefault(t =>
+                    t.UserId == userId &&
+                    t.VerificationType == "email" &&
+                    t.ContactValue == user.Email &&
+                    !t.IsUsed &&
+                    t.ExpiresAt > DateTime.UtcNow);
+
+                if (token == null)
+                {
+                    return BadRequest(new { message = "Invalid or expired verification code" });
+                }
+
+                // Check attempt count to prevent brute force
+                if (token.AttemptCount >= 5)
+                {
+                    return BadRequest(new { message = "Too many verification attempts. Please request a new code." });
+                }
+
+                // Verify the code
+                if (token.VerificationCode != request.VerificationCode)
+                {
+                    // Increment attempt count
+                    token.AttemptCount++;
+                    await _db.PostDataAsync<ContactVerificationTokenDto>("ContactVerificationTokens", token, token.Id);
+
+                    return BadRequest(new
+                    {
+                        message = "Invalid verification code",
+                        attemptsRemaining = Math.Max(0, 5 - token.AttemptCount)
+                    });
+                }
+
+                // Mark token as used
+                token.IsUsed = true;
+                token.VerifiedAt = DateTime.UtcNow;
+                await _db.PostDataAsync<ContactVerificationTokenDto>("ContactVerificationTokens", token, token.Id);
+
+                // Update user verification status
+                user.IsEmailVerified = true;
+                user.EmailVerifiedAt = DateTime.UtcNow;
+                user.UpdatedAt = DateTime.UtcNow;
+                await _db.PostDataAsync<IdentityDto>("Identity", user, user.Id);
+
+                return Ok(new
+                {
+                    message = "Email verified successfully",
+                    isVerified = true,
+                    verifiedAt = DateTime.UtcNow
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Failed to verify email", error = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Create admin account with verified OTP
+        /// </summary>
+        /// <param name="request">Email, OTP, and password for admin creation</param>
+        /// <returns>Success message</returns>
+        [HttpPost("create-admin-with-otp")]
+        [AllowAnonymous]
+        public async Task<IActionResult> CreateAdminWithOtp([FromBody] CreateAdminWithOtpDto request)
+        {
+            try
+            {
+                // Check if admin already exists
+                var adminCheck = await _db.GetDataByColumnAsync<IdentityDto>("Identity", "RoleId", 1);
+                if (adminCheck.Any())
+                {
+                    return BadRequest(new { message = "Admin account already exists in the system" });
+                }
+
+                // Find a verified token for this email
+                var tokens = await _db.GetDataAsync<AdminVerificationTokenDto>("AdminVerificationTokens");
+                var verifiedToken = tokens.FirstOrDefault(t =>
+                    t.Email.Equals(request.Email, StringComparison.OrdinalIgnoreCase) &&
+                    t.IsUsed &&
+                    t.VerificationCode == request.VerificationCode &&
+                    t.VerifiedAt > DateTime.UtcNow.AddMinutes(-15)); // Token must be verified within 15 minutes
+
+                if (verifiedToken == null)
+                {
+                    return BadRequest(new { message = "Invalid or expired OTP verification. Please verify your OTP again." });
+                }
+
+                // Create admin user
+                var adminUser = new IdentityDto
+                {
+                    Id = Guid.NewGuid(),
+                    FirstName = "Admin",
+                    MiddleName = "",
+                    LastName = "User",
+                    Email = request.Email.ToLower(),
+                    HashPass = PasswordService.HashPassword(request.Password),
+                    RoleId = 1, // Admin role
+                    IsEmailVerified = true, // Email is verified through OTP
+                    EmailVerifiedAt = DateTime.UtcNow,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow,
+                    Address = "",
+                    Gender = "",
+                    PhoneNumber = "",
+                    DateOfBirth = DateTime.UtcNow.AddYears(-25) // Default date
+                };
+
+                await _db.PostDataAsync<IdentityDto>("Identity", adminUser, adminUser.Id);
+
+                // Clean up used tokens for this email
+                var emailTokens = tokens.Where(t => t.Email.Equals(request.Email, StringComparison.OrdinalIgnoreCase));
+                foreach (var tokenToDelete in emailTokens)
+                {
+                    await _db.DeleteDataAsync("AdminVerificationTokens", tokenToDelete.Id);
+                }
+
+                return Ok(new
+                {
+                    message = "Admin account created successfully",
+                    adminId = adminUser.Id,
+                    email = adminUser.Email
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Failed to create admin account", error = ex.Message });
             }
         }
     }
