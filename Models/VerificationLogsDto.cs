@@ -44,9 +44,7 @@ namespace Craftmatrix.org.API.Models
         [StringLength(500)]
         public string? UserAgent { get; set; }
         
-        // Navigation properties
-        public virtual VerificationDto Verification { get; set; }
-        public virtual IdentityDto AdminIdentity { get; set; }
+
     }
     
     public static class VerificationLogAction

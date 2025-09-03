@@ -14,15 +14,18 @@ namespace Craftmatrix.org.API.Models
         
         [Required]
         [StringLength(100)]
-        public string Label { get; set; }
+        public string Name { get; set; }
+        
+        [StringLength(500)]
+        public string? Description { get; set; }
         
         [Required]
         [StringLength(50)]
-        public string ContactType { get; set; }
+        public string Type { get; set; }
         
         [Required]
         [StringLength(200)]
-        public string ContactInformation { get; set; }
+        public string Value { get; set; }
         
         [Required]
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
@@ -30,7 +33,6 @@ namespace Craftmatrix.org.API.Models
         [Required]
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
         
-        // Navigation property
-        public virtual IdentityDto Identity { get; set; }
+
     }
 }

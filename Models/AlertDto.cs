@@ -40,8 +40,6 @@ namespace Craftmatrix.org.API.Models
         [Required]
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
         
-        // Navigation properties
-        public virtual IdentityDto User { get; set; }
-        public virtual IdentityDto Responder { get; set; }
+
     }
 }

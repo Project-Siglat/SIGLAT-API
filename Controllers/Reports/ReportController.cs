@@ -141,21 +141,11 @@ namespace Craftmatrix.org.API.Controllers.Reports
         {
             try
             {
-                // Debug: Log all available claims
-                Console.WriteLine("=== JWT Claims Debug ===");
-                foreach (var claim in User.Claims)
-                {
-                    Console.WriteLine($"Claim Type: {claim.Type}, Value: {claim.Value}");
-                }
-                Console.WriteLine("========================");
-                
                 // Get the current user's ID from the JWT token
                 var userIdClaim = User.FindFirst(JwtRegisteredClaimNames.Jti)?.Value;
-                Console.WriteLine($"Jti claim value: {userIdClaim}");
                 
                 if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out Guid userId))
                 {
-                    Console.WriteLine($"Failed to parse user ID. Claim value: '{userIdClaim}'");
                     return BadRequest(new { message = "Invalid user ID" });
                 }
 

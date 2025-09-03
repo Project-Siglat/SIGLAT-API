@@ -124,19 +124,20 @@ namespace Craftmatrix.org.API.Controllers.WhoAmI
         /// <summary>
         /// Changes the authenticated user's password
         /// </summary>
-        /// <param name="pass">The new password to set</param>
+        /// <param name="currentPassword">The current password for verification</param>
+        /// <param name="newPassword">The new password to set</param>
         /// <returns>Updated user identity with new password hash</returns>
         /// <remarks>
-        /// Updates the password for the authenticated user. The password is automatically hashed
-        /// using the system's password hashing service before storage.
+        /// Updates the password for the authenticated user. The current password is verified first,
+        /// then the new password is automatically hashed using the system's password hashing service before storage.
         /// </remarks>
         /// <response code="200">Password changed successfully</response>
-        /// <response code="400">Invalid password data</response>
+        /// <response code="400">Invalid current password or password data</response>
         /// <response code="401">Unauthorized - valid authentication token required</response>
         /// <response code="404">User not found</response>
         /// <response code="500">Internal server error occurred while changing password</response>
         [HttpPost("change-pass")]
-        public async Task<IActionResult> ChangePassword(string pass)
+        public async Task<IActionResult> ChangePassword(string currentPassword, string newPassword)
         {
             var token = HttpContext.Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
             var handler = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler();
@@ -144,9 +145,20 @@ namespace Craftmatrix.org.API.Controllers.WhoAmI
             var tokenData = jsonToken.Payload.Jti;
 
             var identity = await _db.GetSingleDataAsync<IdentityDto>("Identity", tokenData.ToString());
-            identity.HashPass = PasswordService.HashPassword(pass);
+            
+            // Verify current password first
+            var isCurrentPasswordValid = PasswordService.VerifyPassword(currentPassword, identity.HashPass);
+            if (!isCurrentPasswordValid)
+            {
+                return BadRequest(new { message = "Current password is incorrect" });
+            }
+            
+            // Hash and update the new password
+            identity.HashPass = PasswordService.HashPassword(newPassword);
+            identity.UpdatedAt = DateTime.UtcNow;
+            
             await _db.PostDataAsync<IdentityDto>("Identity", identity, identity.Id);
-            return Ok(identity);
+            return Ok(new { message = "Password changed successfully" });
         }
 
         /// <summary>

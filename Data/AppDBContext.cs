@@ -21,6 +21,7 @@ namespace Craftmatrix.org.API.Data
         public DbSet<ChatDto> Chat { get; set; }
         public DbSet<ReportDto> Reports { get; set; }
         public DbSet<UserLoginTrackingDto> UserLoginTracking { get; set; }
+        public DbSet<RefreshTokenDto> RefreshTokens { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -30,35 +31,35 @@ namespace Craftmatrix.org.API.Data
 
             // Coordinates -> Identity relationship
             modelBuilder.Entity<CoordinatesDto>()
-                .HasOne(c => c.Identity)
+                .HasOne<IdentityDto>()
                 .WithMany()
                 .HasForeignKey(c => c.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
 
             // Verification -> Identity relationship
             modelBuilder.Entity<VerificationDto>()
-                .HasOne(v => v.Identity)
+                .HasOne<IdentityDto>()
                 .WithMany()
                 .HasForeignKey(v => v.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
 
             // VerificationLogs -> Verification relationship
             modelBuilder.Entity<VerificationLogsDto>()
-                .HasOne(vl => vl.Verification)
+                .HasOne<VerificationDto>()
                 .WithMany()
                 .HasForeignKey(vl => vl.VerificationId)
                 .OnDelete(DeleteBehavior.Cascade);
 
             // VerificationLogs -> Identity (Admin) relationship
             modelBuilder.Entity<VerificationLogsDto>()
-                .HasOne(vl => vl.AdminIdentity)
+                .HasOne<IdentityDto>()
                 .WithMany()
                 .HasForeignKey(vl => vl.AdminUserId)
                 .OnDelete(DeleteBehavior.Restrict);
 
             // ContactVerificationTokens -> Identity relationship
             modelBuilder.Entity<ContactVerificationTokenDto>()
-                .HasOne(cvt => cvt.Identity)
+                .HasOne<IdentityDto>()
                 .WithMany()
                 .HasForeignKey(cvt => cvt.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
@@ -114,35 +115,61 @@ namespace Craftmatrix.org.API.Data
                 .HasMaxLength(255)
                 .IsRequired(false);
 
+            // RefreshToken configuration
+            modelBuilder.Entity<RefreshTokenDto>()
+                .HasKey(rt => rt.Id);
+
+            modelBuilder.Entity<RefreshTokenDto>()
+                .ToTable("RefreshTokens");
+
+            modelBuilder.Entity<RefreshTokenDto>()
+                .HasOne<IdentityDto>()
+                .WithMany()
+                .HasForeignKey(rt => rt.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<RefreshTokenDto>()
+                .Property(rt => rt.Token)
+                .HasMaxLength(500)
+                .IsRequired();
+
+            modelBuilder.Entity<RefreshTokenDto>()
+                .Property(rt => rt.IpAddress)
+                .HasMaxLength(45);
+
+            modelBuilder.Entity<RefreshTokenDto>()
+                .Property(rt => rt.UserAgent)
+                .HasMaxLength(500);
+
             // Alert -> Identity relationships (User and Responder)
             modelBuilder.Entity<AlertDto>()
-                .HasOne(a => a.User)
+                .HasOne<IdentityDto>()
                 .WithMany()
                 .HasForeignKey(a => a.UserId)
                 .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<AlertDto>()
-                .HasOne(a => a.Responder)
+                .HasOne<IdentityDto>()
                 .WithMany()
                 .HasForeignKey(a => a.ResponderId)
                 .OnDelete(DeleteBehavior.SetNull);
 
             // Chat -> Identity relationships (Sender and Receiver)
             modelBuilder.Entity<ChatDto>()
-                .HasOne(c => c.SenderUser)
+                .HasOne<IdentityDto>()
                 .WithMany()
                 .HasForeignKey(c => c.SenderId)
                 .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<ChatDto>()
-                .HasOne(c => c.ReceiverUser)
+                .HasOne<IdentityDto>()
                 .WithMany()
                 .HasForeignKey(c => c.ReceiverId)
                 .OnDelete(DeleteBehavior.Restrict);
 
             // Contact -> Identity relationship (optional)
             modelBuilder.Entity<ContactDto>()
-                .HasOne(c => c.Identity)
+                .HasOne<IdentityDto>()
                 .WithMany()
                 .HasForeignKey(c => c.UserId)
                 .OnDelete(DeleteBehavior.SetNull);

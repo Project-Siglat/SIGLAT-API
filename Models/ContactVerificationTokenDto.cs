@@ -43,8 +43,7 @@ namespace Craftmatrix.org.API.Models
         
         public int AttemptCount { get; set; } = 0;
         
-        // Navigation property
-        public virtual IdentityDto Identity { get; set; }
+
     }
     
     public static class ContactVerificationType

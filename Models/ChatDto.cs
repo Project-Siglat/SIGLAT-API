@@ -24,8 +24,6 @@ namespace Craftmatrix.org.API.Models
         [Required]
         public DateTime SentAt { get; set; } = DateTime.UtcNow;
         
-        // Navigation properties
-        public virtual IdentityDto SenderUser { get; set; }
-        public virtual IdentityDto ReceiverUser { get; set; }
+
     }
 }

@@ -34,8 +34,7 @@ namespace Craftmatrix.org.API.Middleware
             var response = new
             {
                 error = true,
-                message = "An error occurred while processing your request.",
-                details = exception.Message
+                message = "An error occurred while processing your request."
             };
 
             switch (exception)
@@ -43,16 +42,17 @@ namespace Craftmatrix.org.API.Middleware
                 case ArgumentNullException:
                 case ArgumentException:
                     context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
-                    response = new { error = true, message = "Invalid request parameters.", details = exception.Message };
+                    response = new { error = true, message = "Invalid request parameters." };
                     break;
                 
                 case UnauthorizedAccessException:
                     context.Response.StatusCode = (int)HttpStatusCode.Unauthorized;
-                    response = new { error = true, message = "Unauthorized access.", details = exception.Message };
+                    response = new { error = true, message = "Unauthorized access." };
                     break;
                 
                 default:
                     context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
+                    response = new { error = true, message = "An internal server error occurred." };
                     break;
             }
 

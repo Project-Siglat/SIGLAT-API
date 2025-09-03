@@ -8,6 +8,7 @@ using System.Text.Json;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Text;
+using System.Security.Cryptography;
 
 namespace Craftmatrix.org.API.Controllers.Authentication
 {
@@ -147,7 +148,12 @@ namespace Craftmatrix.org.API.Controllers.Authentication
                 var verify = PasswordService.VerifyPassword(request.Password, data.HashPass);
                 if (verify)
                 {
-                    var token = GenerateToken(data.Email, data.Id.ToString(), data.RoleId.ToString());
+                    // Get the role name instead of role ID
+                    var roles = await _db.GetDataByColumnAsync<RoleDto>("Roles", "Id", data.RoleId);
+                    var roleName = roles.FirstOrDefault()?.Name ?? "User"; // Default to "User" if role not found
+                    
+                    var accessToken = GenerateToken(data.Email, data.Id.ToString(), roleName);
+                    var refreshToken = await GenerateRefreshToken(data.Id, ipAddress, userAgent);
 
                     loginTracking = new UserLoginTrackingDto
                     {
@@ -160,7 +166,17 @@ namespace Craftmatrix.org.API.Controllers.Authentication
                     };
                     await _db.PostDataAsync<UserLoginTrackingDto>("UserLoginTracking", loginTracking, loginTracking.Id);
 
-                    return Ok(new { roleId = data.RoleId, token, userId = data.Id });
+                    var tokenResponse = new TokenResponseDto
+                    {
+                        AccessToken = accessToken,
+                        RefreshToken = refreshToken.Token,
+                        AccessTokenExpiresAt = DateTime.UtcNow.AddMinutes(15),
+                        RefreshTokenExpiresAt = refreshToken.ExpiresAt,
+                        RoleId = data.RoleId,
+                        UserId = data.Id
+                    };
+
+                    return Ok(tokenResponse);
                 }
                 else
                 {
@@ -199,11 +215,11 @@ namespace Craftmatrix.org.API.Controllers.Authentication
             }
         }
 
-        private string GenerateToken(string email, string userId, string roleId)
+        private string GenerateToken(string email, string userId, string roleName)
         {
             if (string.IsNullOrEmpty(email)) throw new ArgumentNullException(nameof(email));
             if (string.IsNullOrEmpty(userId)) throw new ArgumentNullException(nameof(userId));
-            if (string.IsNullOrEmpty(roleId)) throw new ArgumentNullException(nameof(roleId));
+            if (string.IsNullOrEmpty(roleName)) throw new ArgumentNullException(nameof(roleName));
 
             var jwtSecret = Environment.GetEnvironmentVariable("JWT_SECRET");
             if (string.IsNullOrEmpty(jwtSecret))
@@ -220,9 +236,9 @@ namespace Craftmatrix.org.API.Controllers.Authentication
                 {
                                     new Claim(JwtRegisteredClaimNames.Sub, email),
                                     new Claim(JwtRegisteredClaimNames.Jti, userId),
-                                    new Claim(ClaimTypes.Role, roleId)
+                                    new Claim(ClaimTypes.Role, roleName)
                                 }),
-                Expires = DateTime.UtcNow.AddMonths(1),
+                Expires = DateTime.UtcNow.AddMinutes(15), // Reduced to 15 minutes
                 Audience = Environment.GetEnvironmentVariable("JWT_AUDIENCE"),
                 Issuer = Environment.GetEnvironmentVariable("JWT_ISSUER"),
                 SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
@@ -370,11 +386,53 @@ namespace Craftmatrix.org.API.Controllers.Authentication
         }
 
         /// <summary>
+        /// Get current user's login history for dashboard
+        /// </summary>
+        /// <returns>Current user's login history</returns>
+        /// <response code="200">Login history retrieved successfully</response>
+        /// <response code="401">Invalid or missing authentication token</response>
+        [HttpGet("my-login-history")]
+        public async Task<IActionResult> GetMyLoginHistory()
+        {
+            try
+            {
+                var jtiClaim = User.FindFirst(JwtRegisteredClaimNames.Jti)?.Value;
+                if (string.IsNullOrEmpty(jtiClaim) || !Guid.TryParse(jtiClaim, out Guid userId))
+                {
+                    return Unauthorized("Invalid token");
+                }
+
+                var allLogs = await _db.GetDataAsync<UserLoginTrackingDto>("UserLoginTracking");
+                var userLogs = allLogs
+                    .Where(l => l.UserId == userId)
+                    .OrderByDescending(l => l.LoginTimestamp)
+                    .Take(50) // Last 50 login attempts
+                    .Select(l => new
+                    {
+                        l.Id,
+                        l.IpAddress,
+                        l.UserAgent,
+                        l.LoginTimestamp,
+                        l.LogoutTimestamp,
+                        l.LoginStatus,
+                        l.FailureReason,
+                        l.IsActive
+                    });
+
+                return Ok(userLogs);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Error retrieving login history: {ex.Message}");
+            }
+        }
+
+        /// <summary>
         /// Get login tracking logs (Admin only)
         /// </summary>
         /// <returns>Login tracking data</returns>
         [HttpGet("login-logs")]
-        [Authorize(Roles = "1")] // Admin role only
+        [Authorize(Roles = "Admin")] // Admin role only
         public async Task<IActionResult> GetLoginLogs()
         {
             try
@@ -387,6 +445,41 @@ namespace Craftmatrix.org.API.Controllers.Authentication
             catch (Exception ex)
             {
                 return StatusCode(500, $"Error retrieving login logs: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Logout user and mark session as inactive
+        /// </summary>
+        /// <returns>Success message</returns>
+        [HttpPost("logout")]
+        public async Task<IActionResult> Logout()
+        {
+            try
+            {
+                var jtiClaim = User.FindFirst(JwtRegisteredClaimNames.Jti)?.Value;
+                if (!string.IsNullOrEmpty(jtiClaim) && Guid.TryParse(jtiClaim, out Guid userId))
+                {
+                    // Update the most recent active login session to mark logout time
+                    var allLogs = await _db.GetDataAsync<UserLoginTrackingDto>("UserLoginTracking");
+                    var activeSession = allLogs
+                        .Where(l => l.UserId == userId && l.IsActive && l.LoginStatus == "Success")
+                        .OrderByDescending(l => l.LoginTimestamp)
+                        .FirstOrDefault();
+
+                    if (activeSession != null)
+                    {
+                        activeSession.LogoutTimestamp = DateTime.UtcNow;
+                        activeSession.IsActive = false;
+                        await _db.PostDataAsync<UserLoginTrackingDto>("UserLoginTracking", activeSession, activeSession.Id);
+                    }
+                }
+
+                return Ok(new { message = "Logged out successfully" });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Error during logout: {ex.Message}");
             }
         }
 
@@ -545,13 +638,10 @@ namespace Craftmatrix.org.API.Controllers.Authentication
                 await _db.PostDataAsync<ContactVerificationTokenDto>("ContactVerificationTokens", token, token.Id);
 
                 // TODO: In a real implementation, send the code via email or SMS
-                // For development, we'll return the code in the response
                 return Ok(new
                 {
                     message = $"Verification code sent to your {request.VerificationType}",
-                    expiresAt = token.ExpiresAt,
-                    // Remove this in production - only for development
-                    verificationCode = verificationCode
+                    expiresAt = token.ExpiresAt
                 });
             }
             catch (Exception ex)
@@ -697,6 +787,196 @@ namespace Craftmatrix.org.API.Controllers.Authentication
             catch (Exception ex)
             {
                 return StatusCode(500, new { message = "Failed to get verification status", error = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Generate a refresh token for the user
+        /// </summary>
+        private async Task<RefreshTokenDto> GenerateRefreshToken(Guid userId, string ipAddress, string userAgent)
+        {
+            using (var rng = RandomNumberGenerator.Create())
+            {
+                var randomBytes = new byte[64];
+                rng.GetBytes(randomBytes);
+                var token = Convert.ToBase64String(randomBytes);
+
+                var refreshToken = new RefreshTokenDto
+                {
+                    Id = Guid.NewGuid(),
+                    UserId = userId,
+                    Token = token,
+                    ExpiresAt = DateTime.UtcNow.AddDays(7), // 7 days for refresh token
+                    IpAddress = ipAddress,
+                    UserAgent = userAgent,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                };
+
+                await _db.PostDataAsync<RefreshTokenDto>("RefreshTokens", refreshToken, refreshToken.Id);
+                return refreshToken;
+            }
+        }
+
+        /// <summary>
+        /// Refresh access token using refresh token
+        /// </summary>
+        /// <param name="request">Refresh token request</param>
+        /// <returns>New access and refresh tokens</returns>
+        /// <response code="200">Tokens refreshed successfully</response>
+        /// <response code="400">Invalid or expired refresh token</response>
+        /// <response code="401">Unauthorized</response>
+        [HttpPost("refresh")]
+        [AllowAnonymous]
+        public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequestDto request)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(request.RefreshToken))
+                {
+                    return BadRequest(new { message = "Refresh token is required" });
+                }
+
+                // Find the refresh token in database
+                var refreshTokens = await _db.GetDataByColumnAsync<RefreshTokenDto>("RefreshTokens", "Token", request.RefreshToken);
+                var refreshToken = refreshTokens.FirstOrDefault();
+
+                if (refreshToken == null || !refreshToken.IsActive)
+                {
+                    return BadRequest(new { message = "Invalid or expired refresh token" });
+                }
+
+                // Get user data
+                var user = await _db.GetSingleDataAsync<IdentityDto>("Identity", refreshToken.UserId);
+                if (user == null)
+                {
+                    return BadRequest(new { message = "User not found" });
+                }
+
+                // Get role name
+                var roles = await _db.GetDataByColumnAsync<RoleDto>("Roles", "Id", user.RoleId);
+                var roleName = roles.FirstOrDefault()?.Name ?? "User";
+
+                // Generate new tokens
+                var newAccessToken = GenerateToken(user.Email, user.Id.ToString(), roleName);
+                var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "Unknown";
+                var userAgent = HttpContext.Request.Headers["User-Agent"].ToString();
+                var newRefreshToken = await GenerateRefreshToken(user.Id, ipAddress, userAgent);
+
+                // Revoke old refresh token
+                refreshToken.IsRevoked = true;
+                refreshToken.RevokedAt = DateTime.UtcNow;
+                refreshToken.UpdatedAt = DateTime.UtcNow;
+                await _db.PostDataAsync<RefreshTokenDto>("RefreshTokens", refreshToken, refreshToken.Id);
+
+                var tokenResponse = new TokenResponseDto
+                {
+                    AccessToken = newAccessToken,
+                    RefreshToken = newRefreshToken.Token,
+                    AccessTokenExpiresAt = DateTime.UtcNow.AddMinutes(15),
+                    RefreshTokenExpiresAt = newRefreshToken.ExpiresAt,
+                    RoleId = user.RoleId,
+                    UserId = user.Id
+                };
+
+                return Ok(tokenResponse);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Failed to refresh token", error = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Revoke refresh token
+        /// </summary>
+        /// <param name="request">Refresh token to revoke</param>
+        /// <returns>Success message</returns>
+        [HttpPost("revoke")]
+        [AllowAnonymous]
+        public async Task<IActionResult> RevokeToken([FromBody] RefreshTokenRequestDto request)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(request.RefreshToken))
+                {
+                    return BadRequest(new { message = "Refresh token is required" });
+                }
+
+                var refreshTokens = await _db.GetDataByColumnAsync<RefreshTokenDto>("RefreshTokens", "Token", request.RefreshToken);
+                var refreshToken = refreshTokens.FirstOrDefault();
+
+                if (refreshToken != null && refreshToken.IsActive)
+                {
+                    refreshToken.IsRevoked = true;
+                    refreshToken.RevokedAt = DateTime.UtcNow;
+                    refreshToken.UpdatedAt = DateTime.UtcNow;
+                    await _db.PostDataAsync<RefreshTokenDto>("RefreshTokens", refreshToken, refreshToken.Id);
+                }
+
+                return Ok(new { message = "Token revoked successfully" });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Failed to revoke token", error = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Clean up expired refresh tokens (should be called periodically)
+        /// </summary>
+        [HttpDelete("cleanup-tokens")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> CleanupExpiredTokens()
+        {
+            try
+            {
+                var allTokens = await _db.GetDataAsync<RefreshTokenDto>("RefreshTokens");
+                var expiredTokens = allTokens.Where(t => t.IsExpired || t.IsRevoked).ToList();
+
+                int deletedCount = 0;
+                foreach (var token in expiredTokens)
+                {
+                    await _db.DeleteDataAsync("RefreshTokens", token.Id);
+                    deletedCount++;
+                }
+
+                return Ok(new { message = $"Cleaned up {deletedCount} expired/revoked tokens" });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Failed to cleanup tokens", error = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Debug endpoint to inspect JWT token claims (temporary)
+        /// </summary>
+        [HttpGet("debug-token")]
+        public async Task<IActionResult> DebugToken()
+        {
+            try
+            {
+                var claims = User.Claims.Select(c => new { c.Type, c.Value }).ToList();
+                var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
+                var userId = User.FindFirst(JwtRegisteredClaimNames.Jti)?.Value;
+                var email = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+                
+                return Ok(new
+                {
+                    IsAuthenticated = User.Identity?.IsAuthenticated,
+                    AuthenticationType = User.Identity?.AuthenticationType,
+                    Role = userRole,
+                    UserId = userId,
+                    Email = email,
+                    AllClaims = claims,
+                    IsInAdminRole = User.IsInRole("Admin"),
+                    Identity = User.Identity?.Name
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Failed to debug token", error = ex.Message });
             }
         }
     }

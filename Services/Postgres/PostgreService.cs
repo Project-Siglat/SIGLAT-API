@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using Npgsql;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Data;
 using System.Linq;
 using System.Reflection;
@@ -112,11 +113,12 @@ namespace Craftmatrix.org.API.Services
                 await connection.OpenAsync();
 
                 // Check if database exists
-                string checkDbQuery = $"SELECT 1 FROM pg_database WHERE datname = '{_databaseName}'";
+                string checkDbQuery = "SELECT 1 FROM pg_database WHERE datname = @dbname";
                 bool dbExists = false;
 
                 using (var cmd = new NpgsqlCommand(checkDbQuery, connection))
                 {
+                    cmd.Parameters.AddWithValue("@dbname", _databaseName);
                     var result = await cmd.ExecuteScalarAsync();
                     dbExists = (result != null);
                 }
@@ -282,9 +284,10 @@ namespace Craftmatrix.org.API.Services
     {
         try
         {
-            // Get properties of the object
+            // Get properties of the object, excluding NotMapped properties
             var properties = typeof(T).GetProperties()
                 .Where(p => p.CanRead && p.GetGetMethod() != null)
+                .Where(p => !p.GetCustomAttributes(typeof(NotMappedAttribute), false).Any())
                 .ToList();
 
             // Build the SQL INSERT statement
@@ -325,9 +328,10 @@ namespace Craftmatrix.org.API.Services
     {
         try
         {
-            // Get properties of the object (excluding Id)
+            // Get properties of the object (excluding Id and NotMapped properties)
             var properties = typeof(T).GetProperties()
                 .Where(p => p.CanRead && p.GetGetMethod() != null && p.Name != "Id")
+                .Where(p => !p.GetCustomAttributes(typeof(NotMappedAttribute), false).Any())
                 .ToList();
 
             // Build the SQL UPDATE statement

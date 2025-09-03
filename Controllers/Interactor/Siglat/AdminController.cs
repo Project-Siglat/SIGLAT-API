@@ -423,7 +423,7 @@ namespace Craftmatrix.org.API.Controllers.WhoAmI
         public async Task<IActionResult> Contacts()
         {
             var data = await _db.GetDataAsync<ContactDto>("Contact");
-            data = data.OrderBy(x => x.ContactType).ToList();
+            data = data.OrderBy(x => x.Type).ToList();
             return Ok(data);
         }
 
@@ -437,21 +437,27 @@ namespace Craftmatrix.org.API.Controllers.WhoAmI
 
         [HttpPost("contact")]
         [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> Contact([FromBody] ContactDto Contact)
+        public async Task<IActionResult> Contact([FromBody] ContactDto contact)
         {
-            Contact.CreatedAt = DateTime.UtcNow;
-            Contact.UpdatedAt = DateTime.UtcNow;
-            await _db.PostDataAsync<ContactDto>("Contact", Contact, Contact.Id);
-            return Ok(Contact);
+            // Generate new ID if not provided
+            if (contact.Id == Guid.Empty)
+            {
+                contact.Id = Guid.NewGuid();
+            }
+            
+            contact.CreatedAt = DateTime.UtcNow;
+            contact.UpdatedAt = DateTime.UtcNow;
+            await _db.PostDataAsync<ContactDto>("Contact", contact, contact.Id);
+            return Ok(contact);
         }
 
         [HttpPut("contact")]
         [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> UpdateContact([FromBody] ContactDto Contact)
+        public async Task<IActionResult> UpdateContact([FromBody] ContactDto contact)
         {
-            Contact.UpdatedAt = DateTime.UtcNow;
-            await _db.PostDataAsync<ContactDto>("Contact", Contact, Contact.Id);
-            return Ok(Contact);
+            contact.UpdatedAt = DateTime.UtcNow;
+            await _db.PostDataAsync<ContactDto>("Contact", contact, contact.Id);
+            return Ok(contact);
         }
 
         [HttpGet("profile")]
