@@ -175,6 +175,7 @@ namespace Craftmatrix.org.API.Controllers.Authentication
                         AccessTokenExpiresAt = DateTime.UtcNow.AddMinutes(15),
                         RefreshTokenExpiresAt = refreshToken.ExpiresAt,
                         RoleId = data.RoleId,
+                        Role = roleName, // Add role name to response
                         UserId = data.Id
                     };
 
@@ -236,10 +237,11 @@ namespace Craftmatrix.org.API.Controllers.Authentication
             {
                 new Claim(JwtRegisteredClaimNames.Sub, email),
                 new Claim(JwtRegisteredClaimNames.Jti, userId),
-                new Claim(ClaimTypes.Role, roleName)
+                new Claim(ClaimTypes.Role, roleName),
+                new Claim("role", roleName.ToLower()) // Add lowercase role for easier comparison
             };
 
-            // Add roleId claim if provided
+            // Add roleId claim if provided (for backward compatibility)
             if (roleId.HasValue)
             {
                 claims.Add(new Claim("roleId", roleId.Value.ToString()));
@@ -933,6 +935,7 @@ namespace Craftmatrix.org.API.Controllers.Authentication
                     AccessTokenExpiresAt = DateTime.UtcNow.AddMinutes(15),
                     RefreshTokenExpiresAt = newRefreshToken.ExpiresAt,
                     RoleId = user.RoleId,
+                    Role = roleName, // Add role name to response
                     UserId = user.Id
                 };
 
@@ -1490,5 +1493,56 @@ namespace Craftmatrix.org.API.Controllers.Authentication
                 return StatusCode(500, new { message = "Failed to create admin account", error = ex.Message });
             }
         }
+
+        /// <summary>
+        /// TEMPORARY: Reset admin password (for development only)
+        /// </summary>
+        [HttpPost("reset-admin-password")]
+        [AllowAnonymous]
+        public async Task<IActionResult> ResetAdminPassword([FromBody] ResetAdminPasswordRequest request)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(request.Email) || string.IsNullOrEmpty(request.NewPassword))
+                {
+                    return BadRequest(new { message = "Email and new password are required" });
+                }
+
+                // Find admin user by email
+                var adminUsers = await _db.GetDataByColumnAsync<IdentityDto>("Identity", "Email", request.Email);
+                var admin = adminUsers.FirstOrDefault();
+
+                if (admin == null)
+                {
+                    return NotFound(new { message = "Admin user not found" });
+                }
+
+                if (admin.RoleId != 1) // Ensure it's an admin
+                {
+                    return BadRequest(new { message = "User is not an admin" });
+                }
+
+                // Hash the new password
+                var hashedPassword = PasswordService.HashPassword(request.NewPassword);
+
+                // Update admin password
+                admin.HashPass = hashedPassword;
+                admin.UpdatedAt = DateTime.UtcNow;
+
+                await _db.PostDataAsync<IdentityDto>("Identity", admin, admin.Id);
+
+                return Ok(new { message = "Admin password reset successfully" });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Failed to reset admin password", error = ex.Message });
+            }
+        }
+    }
+
+    public class ResetAdminPasswordRequest
+    {
+        public string Email { get; set; } = string.Empty;
+        public string NewPassword { get; set; } = string.Empty;
     }
 }

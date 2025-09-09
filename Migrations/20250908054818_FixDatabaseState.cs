@@ -9,7 +9,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace SIGLATAPI.Migrations
 {
     /// <inheritdoc />
-    public partial class AddAccountVerificationTables : Migration
+    public partial class FixDatabaseState : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -78,44 +78,44 @@ namespace SIGLATAPI.Migrations
                 keyColumn: "Id",
                 keyValue: 1,
                 columns: new[] { "CreatedAt", "UpdatedAt" },
-                values: new object[] { new DateTime(2025, 9, 3, 18, 5, 4, 9, DateTimeKind.Utc).AddTicks(5026), new DateTime(2025, 9, 3, 18, 5, 4, 9, DateTimeKind.Utc).AddTicks(5028) });
+                values: new object[] { new DateTime(2025, 9, 8, 5, 48, 17, 130, DateTimeKind.Utc).AddTicks(1386), new DateTime(2025, 9, 8, 5, 48, 17, 130, DateTimeKind.Utc).AddTicks(1387) });
 
             migrationBuilder.UpdateData(
                 table: "Roles",
                 keyColumn: "Id",
                 keyValue: 2,
                 columns: new[] { "CreatedAt", "UpdatedAt" },
-                values: new object[] { new DateTime(2025, 9, 3, 18, 5, 4, 9, DateTimeKind.Utc).AddTicks(5032), new DateTime(2025, 9, 3, 18, 5, 4, 9, DateTimeKind.Utc).AddTicks(5032) });
+                values: new object[] { new DateTime(2025, 9, 8, 5, 48, 17, 130, DateTimeKind.Utc).AddTicks(1390), new DateTime(2025, 9, 8, 5, 48, 17, 130, DateTimeKind.Utc).AddTicks(1390) });
 
             migrationBuilder.UpdateData(
                 table: "Roles",
                 keyColumn: "Id",
                 keyValue: 3,
                 columns: new[] { "CreatedAt", "UpdatedAt" },
-                values: new object[] { new DateTime(2025, 9, 3, 18, 5, 4, 9, DateTimeKind.Utc).AddTicks(5034), new DateTime(2025, 9, 3, 18, 5, 4, 9, DateTimeKind.Utc).AddTicks(5034) });
+                values: new object[] { new DateTime(2025, 9, 8, 5, 48, 17, 130, DateTimeKind.Utc).AddTicks(1391), new DateTime(2025, 9, 8, 5, 48, 17, 130, DateTimeKind.Utc).AddTicks(1391) });
 
             migrationBuilder.UpdateData(
                 table: "Roles",
                 keyColumn: "Id",
                 keyValue: 4,
                 columns: new[] { "CreatedAt", "UpdatedAt" },
-                values: new object[] { new DateTime(2025, 9, 3, 18, 5, 4, 9, DateTimeKind.Utc).AddTicks(5036), new DateTime(2025, 9, 3, 18, 5, 4, 9, DateTimeKind.Utc).AddTicks(5036) });
+                values: new object[] { new DateTime(2025, 9, 8, 5, 48, 17, 130, DateTimeKind.Utc).AddTicks(1392), new DateTime(2025, 9, 8, 5, 48, 17, 130, DateTimeKind.Utc).AddTicks(1393) });
 
             migrationBuilder.UpdateData(
                 table: "Roles",
                 keyColumn: "Id",
                 keyValue: 5,
                 columns: new[] { "CreatedAt", "UpdatedAt" },
-                values: new object[] { new DateTime(2025, 9, 3, 18, 5, 4, 9, DateTimeKind.Utc).AddTicks(5037), new DateTime(2025, 9, 3, 18, 5, 4, 9, DateTimeKind.Utc).AddTicks(5038) });
+                values: new object[] { new DateTime(2025, 9, 8, 5, 48, 17, 130, DateTimeKind.Utc).AddTicks(1394), new DateTime(2025, 9, 8, 5, 48, 17, 130, DateTimeKind.Utc).AddTicks(1394) });
 
             migrationBuilder.InsertData(
                 table: "VerificationTypes",
                 columns: new[] { "Id", "CreatedAt", "Description", "IsActive", "Name", "UpdatedAt" },
                 values: new object[,]
                 {
-                    { 1, new DateTime(2025, 9, 3, 18, 5, 4, 9, DateTimeKind.Utc).AddTicks(5138), "Philippine Passport", true, "Passport", new DateTime(2025, 9, 3, 18, 5, 4, 9, DateTimeKind.Utc).AddTicks(5138) },
-                    { 2, new DateTime(2025, 9, 3, 18, 5, 4, 9, DateTimeKind.Utc).AddTicks(5141), "Philippine National ID (PhilID)", true, "National ID", new DateTime(2025, 9, 3, 18, 5, 4, 9, DateTimeKind.Utc).AddTicks(5141) },
-                    { 3, new DateTime(2025, 9, 3, 18, 5, 4, 9, DateTimeKind.Utc).AddTicks(5143), "Valid Student ID from Educational Institution", true, "Student ID", new DateTime(2025, 9, 3, 18, 5, 4, 9, DateTimeKind.Utc).AddTicks(5143) }
+                    { 1, new DateTime(2025, 9, 8, 5, 48, 17, 130, DateTimeKind.Utc).AddTicks(1578), "Philippine Passport", true, "Passport", new DateTime(2025, 9, 8, 5, 48, 17, 130, DateTimeKind.Utc).AddTicks(1579) },
+                    { 2, new DateTime(2025, 9, 8, 5, 48, 17, 130, DateTimeKind.Utc).AddTicks(1581), "Philippine National ID (PhilID)", true, "National ID", new DateTime(2025, 9, 8, 5, 48, 17, 130, DateTimeKind.Utc).AddTicks(1582) },
+                    { 3, new DateTime(2025, 9, 8, 5, 48, 17, 130, DateTimeKind.Utc).AddTicks(1583), "Valid Student ID from Educational Institution", true, "Student ID", new DateTime(2025, 9, 8, 5, 48, 17, 130, DateTimeKind.Utc).AddTicks(1583) }
                 });
 
             migrationBuilder.CreateIndex(

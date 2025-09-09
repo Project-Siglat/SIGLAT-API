@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace SIGLATAPI.Migrations
 {
     [DbContext(typeof(AppDBContext))]
-    [Migration("20250903180504_AddAccountVerificationTables")]
-    partial class AddAccountVerificationTables
+    [Migration("20250908054818_FixDatabaseState")]
+    partial class FixDatabaseState
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -485,42 +485,42 @@ namespace SIGLATAPI.Migrations
                         new
                         {
                             Id = 1,
-                            CreatedAt = new DateTime(2025, 9, 3, 18, 5, 4, 9, DateTimeKind.Utc).AddTicks(5026),
+                            CreatedAt = new DateTime(2025, 9, 8, 5, 48, 17, 130, DateTimeKind.Utc).AddTicks(1386),
                             Description = "System Administrator",
                             Name = "Admin",
-                            UpdatedAt = new DateTime(2025, 9, 3, 18, 5, 4, 9, DateTimeKind.Utc).AddTicks(5028)
+                            UpdatedAt = new DateTime(2025, 9, 8, 5, 48, 17, 130, DateTimeKind.Utc).AddTicks(1387)
                         },
                         new
                         {
                             Id = 2,
-                            CreatedAt = new DateTime(2025, 9, 3, 18, 5, 4, 9, DateTimeKind.Utc).AddTicks(5032),
+                            CreatedAt = new DateTime(2025, 9, 8, 5, 48, 17, 130, DateTimeKind.Utc).AddTicks(1390),
                             Description = "Regular User",
                             Name = "User",
-                            UpdatedAt = new DateTime(2025, 9, 3, 18, 5, 4, 9, DateTimeKind.Utc).AddTicks(5032)
+                            UpdatedAt = new DateTime(2025, 9, 8, 5, 48, 17, 130, DateTimeKind.Utc).AddTicks(1390)
                         },
                         new
                         {
                             Id = 3,
-                            CreatedAt = new DateTime(2025, 9, 3, 18, 5, 4, 9, DateTimeKind.Utc).AddTicks(5034),
+                            CreatedAt = new DateTime(2025, 9, 8, 5, 48, 17, 130, DateTimeKind.Utc).AddTicks(1391),
                             Description = "Ambulance Personnel",
                             Name = "Ambulance",
-                            UpdatedAt = new DateTime(2025, 9, 3, 18, 5, 4, 9, DateTimeKind.Utc).AddTicks(5034)
+                            UpdatedAt = new DateTime(2025, 9, 8, 5, 48, 17, 130, DateTimeKind.Utc).AddTicks(1391)
                         },
                         new
                         {
                             Id = 4,
-                            CreatedAt = new DateTime(2025, 9, 3, 18, 5, 4, 9, DateTimeKind.Utc).AddTicks(5036),
+                            CreatedAt = new DateTime(2025, 9, 8, 5, 48, 17, 130, DateTimeKind.Utc).AddTicks(1392),
                             Description = "Philippine National Police",
                             Name = "PNP",
-                            UpdatedAt = new DateTime(2025, 9, 3, 18, 5, 4, 9, DateTimeKind.Utc).AddTicks(5036)
+                            UpdatedAt = new DateTime(2025, 9, 8, 5, 48, 17, 130, DateTimeKind.Utc).AddTicks(1393)
                         },
                         new
                         {
                             Id = 5,
-                            CreatedAt = new DateTime(2025, 9, 3, 18, 5, 4, 9, DateTimeKind.Utc).AddTicks(5037),
+                            CreatedAt = new DateTime(2025, 9, 8, 5, 48, 17, 130, DateTimeKind.Utc).AddTicks(1394),
                             Description = "Bureau of Fire Protection",
                             Name = "BFP",
-                            UpdatedAt = new DateTime(2025, 9, 3, 18, 5, 4, 9, DateTimeKind.Utc).AddTicks(5038)
+                            UpdatedAt = new DateTime(2025, 9, 8, 5, 48, 17, 130, DateTimeKind.Utc).AddTicks(1394)
                         });
                 });
 
@@ -700,29 +700,29 @@ namespace SIGLATAPI.Migrations
                         new
                         {
                             Id = 1,
-                            CreatedAt = new DateTime(2025, 9, 3, 18, 5, 4, 9, DateTimeKind.Utc).AddTicks(5138),
+                            CreatedAt = new DateTime(2025, 9, 8, 5, 48, 17, 130, DateTimeKind.Utc).AddTicks(1578),
                             Description = "Philippine Passport",
                             IsActive = true,
                             Name = "Passport",
-                            UpdatedAt = new DateTime(2025, 9, 3, 18, 5, 4, 9, DateTimeKind.Utc).AddTicks(5138)
+                            UpdatedAt = new DateTime(2025, 9, 8, 5, 48, 17, 130, DateTimeKind.Utc).AddTicks(1579)
                         },
                         new
                         {
                             Id = 2,
-                            CreatedAt = new DateTime(2025, 9, 3, 18, 5, 4, 9, DateTimeKind.Utc).AddTicks(5141),
+                            CreatedAt = new DateTime(2025, 9, 8, 5, 48, 17, 130, DateTimeKind.Utc).AddTicks(1581),
                             Description = "Philippine National ID (PhilID)",
                             IsActive = true,
                             Name = "National ID",
-                            UpdatedAt = new DateTime(2025, 9, 3, 18, 5, 4, 9, DateTimeKind.Utc).AddTicks(5141)
+                            UpdatedAt = new DateTime(2025, 9, 8, 5, 48, 17, 130, DateTimeKind.Utc).AddTicks(1582)
                         },
                         new
                         {
                             Id = 3,
-                            CreatedAt = new DateTime(2025, 9, 3, 18, 5, 4, 9, DateTimeKind.Utc).AddTicks(5143),
+                            CreatedAt = new DateTime(2025, 9, 8, 5, 48, 17, 130, DateTimeKind.Utc).AddTicks(1583),
                             Description = "Valid Student ID from Educational Institution",
                             IsActive = true,
                             Name = "Student ID",
-                            UpdatedAt = new DateTime(2025, 9, 3, 18, 5, 4, 9, DateTimeKind.Utc).AddTicks(5143)
+                            UpdatedAt = new DateTime(2025, 9, 8, 5, 48, 17, 130, DateTimeKind.Utc).AddTicks(1583)
                         });
                 });
 

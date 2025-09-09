@@ -7,6 +7,7 @@ namespace Craftmatrix.org.API.Models
         public DateTime AccessTokenExpiresAt { get; set; }
         public DateTime RefreshTokenExpiresAt { get; set; }
         public int RoleId { get; set; }
+        public string Role { get; set; } = string.Empty; // Add role name
         public Guid UserId { get; set; }
     }
 

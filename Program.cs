@@ -36,13 +36,15 @@ builder.Services.AddDbContext<AppDBContext>((serviceProvider, options) =>
 builder.Services.AddHostedService<DatabaseInitializer>();
 builder.Services.AddCors(options =>
 {
+    var corsOrigins = Environment.GetEnvironmentVariable("CORS_ORIGINS");
+    var allowedOrigins = !string.IsNullOrEmpty(corsOrigins) 
+        ? corsOrigins.Split(',', StringSplitOptions.RemoveEmptyEntries)
+        : new[] { "http://localhost:2424", "http://localhost:2425", "http://localhost:2426" };
+
     options.AddPolicy(name: Origin,
                       policy =>
                       {
-                           policy.WithOrigins(
-                               "http://localhost:2424",
-                               "http://localhost:2425", 
-                               "http://localhost:2426")
+                           policy.WithOrigins(allowedOrigins)
                               .AllowAnyHeader()
                               .AllowAnyMethod()
                               .AllowCredentials();

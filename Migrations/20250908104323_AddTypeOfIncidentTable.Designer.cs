@@ -3,6 +3,7 @@ using System;
 using Craftmatrix.org.API.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace SIGLATAPI.Migrations
 {
     [DbContext(typeof(AppDBContext))]
-    partial class AppDBContextModelSnapshot : ModelSnapshot
+    [Migration("20250908104323_AddTypeOfIncidentTable")]
+    partial class AddTypeOfIncidentTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -482,42 +485,42 @@ namespace SIGLATAPI.Migrations
                         new
                         {
                             Id = 1,
-                            CreatedAt = new DateTime(2025, 9, 8, 11, 6, 5, 116, DateTimeKind.Utc).AddTicks(5858),
+                            CreatedAt = new DateTime(2025, 9, 8, 10, 43, 21, 795, DateTimeKind.Utc).AddTicks(6200),
                             Description = "System Administrator",
                             Name = "Admin",
-                            UpdatedAt = new DateTime(2025, 9, 8, 11, 6, 5, 116, DateTimeKind.Utc).AddTicks(5859)
+                            UpdatedAt = new DateTime(2025, 9, 8, 10, 43, 21, 795, DateTimeKind.Utc).AddTicks(6201)
                         },
                         new
                         {
                             Id = 2,
-                            CreatedAt = new DateTime(2025, 9, 8, 11, 6, 5, 116, DateTimeKind.Utc).AddTicks(5864),
+                            CreatedAt = new DateTime(2025, 9, 8, 10, 43, 21, 795, DateTimeKind.Utc).AddTicks(6204),
                             Description = "Regular User",
                             Name = "User",
-                            UpdatedAt = new DateTime(2025, 9, 8, 11, 6, 5, 116, DateTimeKind.Utc).AddTicks(5864)
+                            UpdatedAt = new DateTime(2025, 9, 8, 10, 43, 21, 795, DateTimeKind.Utc).AddTicks(6205)
                         },
                         new
                         {
                             Id = 3,
-                            CreatedAt = new DateTime(2025, 9, 8, 11, 6, 5, 116, DateTimeKind.Utc).AddTicks(5866),
+                            CreatedAt = new DateTime(2025, 9, 8, 10, 43, 21, 795, DateTimeKind.Utc).AddTicks(6206),
                             Description = "Ambulance Personnel",
                             Name = "Ambulance",
-                            UpdatedAt = new DateTime(2025, 9, 8, 11, 6, 5, 116, DateTimeKind.Utc).AddTicks(5867)
+                            UpdatedAt = new DateTime(2025, 9, 8, 10, 43, 21, 795, DateTimeKind.Utc).AddTicks(6206)
                         },
                         new
                         {
                             Id = 4,
-                            CreatedAt = new DateTime(2025, 9, 8, 11, 6, 5, 116, DateTimeKind.Utc).AddTicks(5868),
+                            CreatedAt = new DateTime(2025, 9, 8, 10, 43, 21, 795, DateTimeKind.Utc).AddTicks(6207),
                             Description = "Philippine National Police",
                             Name = "PNP",
-                            UpdatedAt = new DateTime(2025, 9, 8, 11, 6, 5, 116, DateTimeKind.Utc).AddTicks(5868)
+                            UpdatedAt = new DateTime(2025, 9, 8, 10, 43, 21, 795, DateTimeKind.Utc).AddTicks(6207)
                         },
                         new
                         {
                             Id = 5,
-                            CreatedAt = new DateTime(2025, 9, 8, 11, 6, 5, 116, DateTimeKind.Utc).AddTicks(5870),
+                            CreatedAt = new DateTime(2025, 9, 8, 10, 43, 21, 795, DateTimeKind.Utc).AddTicks(6208),
                             Description = "Bureau of Fire Protection",
                             Name = "BFP",
-                            UpdatedAt = new DateTime(2025, 9, 8, 11, 6, 5, 116, DateTimeKind.Utc).AddTicks(5871)
+                            UpdatedAt = new DateTime(2025, 9, 8, 10, 43, 21, 795, DateTimeKind.Utc).AddTicks(6208)
                         });
                 });
 
@@ -552,16 +555,6 @@ namespace SIGLATAPI.Migrations
 
                     b.Property<Guid>("WhoAddedItID")
                         .HasColumnType("uuid");
-
-                    b.Property<bool>("isBFPTrue")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(false);
-
-                    b.Property<bool>("isPNPTrue")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(false);
 
                     b.HasKey("Id");
 
@@ -746,29 +739,29 @@ namespace SIGLATAPI.Migrations
                         new
                         {
                             Id = 1,
-                            CreatedAt = new DateTime(2025, 9, 8, 11, 6, 5, 116, DateTimeKind.Utc).AddTicks(6073),
+                            CreatedAt = new DateTime(2025, 9, 8, 10, 43, 21, 795, DateTimeKind.Utc).AddTicks(6284),
                             Description = "Philippine Passport",
                             IsActive = true,
                             Name = "Passport",
-                            UpdatedAt = new DateTime(2025, 9, 8, 11, 6, 5, 116, DateTimeKind.Utc).AddTicks(6074)
+                            UpdatedAt = new DateTime(2025, 9, 8, 10, 43, 21, 795, DateTimeKind.Utc).AddTicks(6284)
                         },
                         new
                         {
                             Id = 2,
-                            CreatedAt = new DateTime(2025, 9, 8, 11, 6, 5, 116, DateTimeKind.Utc).AddTicks(6078),
+                            CreatedAt = new DateTime(2025, 9, 8, 10, 43, 21, 795, DateTimeKind.Utc).AddTicks(6286),
                             Description = "Philippine National ID (PhilID)",
                             IsActive = true,
                             Name = "National ID",
-                            UpdatedAt = new DateTime(2025, 9, 8, 11, 6, 5, 116, DateTimeKind.Utc).AddTicks(6079)
+                            UpdatedAt = new DateTime(2025, 9, 8, 10, 43, 21, 795, DateTimeKind.Utc).AddTicks(6287)
                         },
                         new
                         {
                             Id = 3,
-                            CreatedAt = new DateTime(2025, 9, 8, 11, 6, 5, 116, DateTimeKind.Utc).AddTicks(6081),
+                            CreatedAt = new DateTime(2025, 9, 8, 10, 43, 21, 795, DateTimeKind.Utc).AddTicks(6288),
                             Description = "Valid Student ID from Educational Institution",
                             IsActive = true,
                             Name = "Student ID",
-                            UpdatedAt = new DateTime(2025, 9, 8, 11, 6, 5, 116, DateTimeKind.Utc).AddTicks(6081)
+                            UpdatedAt = new DateTime(2025, 9, 8, 10, 43, 21, 795, DateTimeKind.Utc).AddTicks(6288)
                         });
                 });
 

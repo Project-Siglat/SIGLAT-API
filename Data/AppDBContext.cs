@@ -24,6 +24,7 @@ namespace Craftmatrix.org.API.Data
         public DbSet<RefreshTokenDto> RefreshTokens { get; set; }
         public DbSet<VerificationTypeDto> VerificationTypes { get; set; }
         public DbSet<AccountVerificationDto> AccountVerifications { get; set; }
+        public DbSet<TypeOfIncidentDto> TypeOfIncidents { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -239,6 +240,53 @@ namespace Craftmatrix.org.API.Data
             modelBuilder.Entity<AccountVerificationDto>()
                 .Property(av => av.Status)
                 .HasMaxLength(20)
+                .IsRequired();
+
+            // TypeOfIncident configuration
+            modelBuilder.Entity<TypeOfIncidentDto>()
+                .HasKey(toi => toi.Id);
+
+            modelBuilder.Entity<TypeOfIncidentDto>()
+                .ToTable("TypeOfIncidents");
+
+            // TypeOfIncident -> Identity (WhoAddedIt) relationship
+            modelBuilder.Entity<TypeOfIncidentDto>()
+                .HasOne<IdentityDto>()
+                .WithMany()
+                .HasForeignKey(toi => toi.WhoAddedItID)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<TypeOfIncidentDto>()
+                .Property(toi => toi.NameOfIncident)
+                .HasMaxLength(100)
+                .IsRequired();
+
+            modelBuilder.Entity<TypeOfIncidentDto>()
+                .Property(toi => toi.Description)
+                .HasMaxLength(500);
+
+            modelBuilder.Entity<TypeOfIncidentDto>()
+                .Property(toi => toi.AddedDateTime)
+                .IsRequired();
+
+            modelBuilder.Entity<TypeOfIncidentDto>()
+                .Property(toi => toi.IsActive)
+                .HasDefaultValue(true);
+
+            modelBuilder.Entity<TypeOfIncidentDto>()
+                .Property(toi => toi.isBFPTrue)
+                .HasDefaultValue(false);
+
+            modelBuilder.Entity<TypeOfIncidentDto>()
+                .Property(toi => toi.isPNPTrue)
+                .HasDefaultValue(false);
+
+            modelBuilder.Entity<TypeOfIncidentDto>()
+                .Property(toi => toi.CreatedAt)
+                .IsRequired();
+
+            modelBuilder.Entity<TypeOfIncidentDto>()
+                .Property(toi => toi.UpdatedAt)
                 .IsRequired();
 
             // Seed default roles
