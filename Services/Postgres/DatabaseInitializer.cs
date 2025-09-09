@@ -5,9 +5,12 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Craftmatrix.org.Data;
+using Craftmatrix.org.API.Data;
+using Craftmatrix.org.API.Services;
 
-public class DatabaseInitializer : IHostedService
+namespace Craftmatrix.org.API.Services
+{
+    public class DatabaseInitializer : IHostedService
 {
     private readonly IServiceProvider _serviceProvider;
     private readonly ILogger<DatabaseInitializer> _logger;
@@ -60,5 +63,6 @@ public class DatabaseInitializer : IHostedService
     public Task StopAsync(CancellationToken cancellationToken)
     {
         return Task.CompletedTask;
+    }
     }
 }

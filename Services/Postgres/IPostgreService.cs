@@ -1,7 +1,9 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-public interface IPostgreService
+namespace Craftmatrix.org.API.Services
+{
+    public interface IPostgreService
 {
     /// <summary>
     /// Checks if the PostgreSQL connection is active.
@@ -63,10 +65,20 @@ public interface IPostgreService
     Task<bool> PostDataAsync<T>(string tableName, T data, object id) where T : class;
 
     /// <summary>
+    /// Creates or updates Identity data using explicit SQL to avoid reflection issues.
+    /// </summary>
+    /// <param name="tableName">The name of the table</param>
+    /// <param name="data">The data object to save</param>
+    /// <param name="id">The ID of the record (for updates)</param>
+    /// <returns>True if operation was successful, false otherwise</returns>
+    Task<bool> PostIdentityDataAsync(string tableName, object data, object id);
+
+    /// <summary>
     /// Deletes a record from the specified table by ID.
     /// </summary>
     /// <param name="tableName">The name of the table</param>
     /// <param name="id">The ID of the record to delete</param>
     /// <returns>True if deletion was successful, false if record not found</returns>
-    Task<bool> DeleteDataAsync(string tableName, object id);
+        Task<bool> DeleteDataAsync(string tableName, object id);
+    }
 }

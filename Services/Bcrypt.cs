@@ -1,4 +1,4 @@
-namespace Craftmatrix.Codex.org.Service
+namespace Craftmatrix.org.API.Services
 {
 
     public class PasswordService

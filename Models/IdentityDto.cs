@@ -1,4 +1,6 @@
-namespace Craftmatrix.org.Model
+using System.ComponentModel.DataAnnotations;
+
+namespace Craftmatrix.org.API.Models
 {
     public class IdentityDto
     {
@@ -9,9 +11,13 @@ namespace Craftmatrix.org.Model
         public string Address { get; set; }
         public string Gender { get; set; }
         public string PhoneNumber { get; set; }
-        public string Role { get; set; }
+        public bool IsPhoneVerified { get; set; } = false;
+        public DateTime? PhoneVerifiedAt { get; set; }
+        public int RoleId { get; set; }
         public DateTime DateOfBirth { get; set; }
         public string Email { get; set; }
+        public bool IsEmailVerified { get; set; } = false;
+        public DateTime? EmailVerifiedAt { get; set; }
         public string HashPass { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }

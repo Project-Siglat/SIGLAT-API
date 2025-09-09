@@ -3,13 +3,16 @@ using Microsoft.Extensions.Logging;
 using Npgsql;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Data;
 using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
-public class PostgreService : IPostgreService
+namespace Craftmatrix.org.API.Services
+{
+    public class PostgreService : IPostgreService
 {
     private readonly string _connectionString;
     private readonly string _databaseName;
@@ -91,6 +94,7 @@ public class PostgreService : IPostgreService
         if (_initialized) return;
 
         await EnsureDatabaseExistsAsync();
+        await EnsureTablesExistAsync();
         _initialized = true;
         _logger.LogInformation("Database initialization completed");
     }
@@ -110,11 +114,12 @@ public class PostgreService : IPostgreService
                 await connection.OpenAsync();
 
                 // Check if database exists
-                string checkDbQuery = $"SELECT 1 FROM pg_database WHERE datname = '{_databaseName}'";
+                string checkDbQuery = "SELECT 1 FROM pg_database WHERE datname = @dbname";
                 bool dbExists = false;
 
                 using (var cmd = new NpgsqlCommand(checkDbQuery, connection))
                 {
+                    cmd.Parameters.AddWithValue("@dbname", _databaseName);
                     var result = await cmd.ExecuteScalarAsync();
                     dbExists = (result != null);
                 }
@@ -139,6 +144,79 @@ public class PostgreService : IPostgreService
         catch (Exception ex)
         {
             _logger.LogError(ex, $"Failed to create database '{_databaseName}'");
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Ensures that required tables exist, creates them if they don't
+    /// </summary>
+    private async Task EnsureTablesExistAsync()
+    {
+        try
+        {
+            using (var connection = await CreateConnectionAsync())
+            {
+                // Create AdminVerificationTokens table if it doesn't exist
+                string createAdminTokensTable = @"
+                    CREATE TABLE IF NOT EXISTS ""AdminVerificationTokens"" (
+                        ""Id"" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                        ""Email"" VARCHAR(500) NOT NULL,
+                        ""VerificationCode"" VARCHAR(10) NOT NULL,
+                        ""CreatedAt"" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                        ""ExpiresAt"" TIMESTAMP WITH TIME ZONE NOT NULL,
+                        ""IsUsed"" BOOLEAN NOT NULL DEFAULT FALSE,
+                        ""VerifiedAt"" TIMESTAMP WITH TIME ZONE NULL,
+                        ""IpAddress"" VARCHAR(45) NULL,
+                        ""UserAgent"" VARCHAR(500) NULL,
+                        ""AttemptCount"" INTEGER NOT NULL DEFAULT 0
+                    )";
+
+                await connection.ExecuteAsync(createAdminTokensTable);
+                _logger.LogInformation("AdminVerificationTokens table ensured to exist");
+
+                // Create ContactVerificationTokens table if it doesn't exist
+                string createContactTokensTable = @"
+                    CREATE TABLE IF NOT EXISTS ""ContactVerificationTokens"" (
+                        ""Id"" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                        ""UserId"" UUID NOT NULL,
+                        ""VerificationType"" VARCHAR(50) NOT NULL,
+                        ""ContactValue"" VARCHAR(500) NOT NULL,
+                        ""VerificationCode"" VARCHAR(10) NOT NULL,
+                        ""CreatedAt"" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                        ""ExpiresAt"" TIMESTAMP WITH TIME ZONE NOT NULL,
+                        ""IsUsed"" BOOLEAN NOT NULL DEFAULT FALSE,
+                        ""VerifiedAt"" TIMESTAMP WITH TIME ZONE NULL,
+                        ""IpAddress"" VARCHAR(45) NULL,
+                        ""UserAgent"" VARCHAR(500) NULL,
+                        ""AttemptCount"" INTEGER NOT NULL DEFAULT 0
+                    )";
+
+                await connection.ExecuteAsync(createContactTokensTable);
+                _logger.LogInformation("ContactVerificationTokens table ensured to exist");
+
+                // Create RefreshTokens table if it doesn't exist
+                string createRefreshTokensTable = @"
+                    CREATE TABLE IF NOT EXISTS ""RefreshTokens"" (
+                        ""Id"" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                        ""UserId"" UUID NOT NULL,
+                        ""Token"" VARCHAR(1000) NOT NULL,
+                        ""CreatedAt"" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                        ""UpdatedAt"" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                        ""ExpiresAt"" TIMESTAMP WITH TIME ZONE NOT NULL,
+                        ""IsRevoked"" BOOLEAN NOT NULL DEFAULT FALSE,
+                        ""RevokedAt"" TIMESTAMP WITH TIME ZONE NULL,
+                        ""IpAddress"" VARCHAR(45) NULL,
+                        ""UserAgent"" VARCHAR(500) NULL
+                    )";
+
+                await connection.ExecuteAsync(createRefreshTokensTable);
+                _logger.LogInformation("RefreshTokens table ensured to exist");
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to create required tables");
             throw;
         }
     }
@@ -280,9 +358,10 @@ public class PostgreService : IPostgreService
     {
         try
         {
-            // Get properties of the object
+            // Get properties of the object, excluding NotMapped properties
             var properties = typeof(T).GetProperties()
                 .Where(p => p.CanRead && p.GetGetMethod() != null)
+                .Where(p => !p.GetCustomAttributes(typeof(NotMappedAttribute), false).Any())
                 .ToList();
 
             // Build the SQL INSERT statement
@@ -323,9 +402,10 @@ public class PostgreService : IPostgreService
     {
         try
         {
-            // Get properties of the object (excluding Id)
+            // Get properties of the object (excluding Id and NotMapped properties)
             var properties = typeof(T).GetProperties()
                 .Where(p => p.CanRead && p.GetGetMethod() != null && p.Name != "Id")
+                .Where(p => !p.GetCustomAttributes(typeof(NotMappedAttribute), false).Any())
                 .ToList();
 
             // Build the SQL UPDATE statement
@@ -396,6 +476,104 @@ public class PostgreService : IPostgreService
         }
     }
 
+    /// <summary>
+    /// Inserts a new record into the specified table using explicit SQL.
+    /// </summary>
+    public async Task<bool> PostIdentityDataAsync(string tableName, object data, object id)
+    {
+        try
+        {
+            using (var connection = await CreateConnectionAsync())
+            {
+                // First check if record exists
+                string checkQuery = $"SELECT COUNT(*) FROM \"{tableName}\" WHERE \"Id\" = @Id";
+                int count = await connection.ExecuteScalarAsync<int>(checkQuery, new { Id = id });
+
+                if (count > 0)
+                {
+                    // Record exists, use explicit UPDATE for Identity table
+                    return await UpdateIdentityRecordAsync(connection, data, id);
+                }
+                else
+                {
+                    // Record doesn't exist, use explicit INSERT for Identity table
+                    return await InsertIdentityRecordAsync(connection, data);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, $"Error saving identity data to table '{tableName}'");
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Updates an existing Identity record using explicit SQL to avoid reflection issues.
+    /// </summary>
+    private async Task<bool> UpdateIdentityRecordAsync(IDbConnection connection, object data, object id)
+    {
+        try
+        {
+            string query = @"
+                UPDATE ""Identity"" SET 
+                    ""FirstName"" = @FirstName, ""MiddleName"" = @MiddleName, ""LastName"" = @LastName, 
+                    ""Address"" = @Address, ""Gender"" = @Gender, ""PhoneNumber"" = @PhoneNumber, 
+                    ""DateOfBirth"" = @DateOfBirth, ""Email"" = @Email, ""RoleId"" = @RoleId, 
+                    ""IsEmailVerified"" = @IsEmailVerified, ""IsPhoneVerified"" = @IsPhoneVerified, 
+                    ""EmailVerifiedAt"" = @EmailVerifiedAt, ""PhoneVerifiedAt"" = @PhoneVerifiedAt, 
+                    ""HashPass"" = @HashPass, ""CreatedAt"" = @CreatedAt, ""UpdatedAt"" = @UpdatedAt
+                WHERE ""Id"" = @Id";
+
+            _logger.LogDebug($"Executing explicit Identity update query: {query}");
+
+            var parameters = new DynamicParameters(data);
+            parameters.Add("Id", id);
+
+            int rowsAffected = await connection.ExecuteAsync(query, parameters);
+            _logger.LogInformation($"Updated Identity record with ID {id}");
+            return rowsAffected > 0;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, $"Error updating Identity record with explicit SQL");
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Inserts a new Identity record using explicit SQL to avoid reflection issues.
+    /// </summary>
+    private async Task<bool> InsertIdentityRecordAsync(IDbConnection connection, object data)
+    {
+        try
+        {
+            string query = @"
+                INSERT INTO ""Identity"" (
+                    ""Id"", ""FirstName"", ""MiddleName"", ""LastName"", ""Address"", 
+                    ""Gender"", ""PhoneNumber"", ""DateOfBirth"", ""Email"", ""RoleId"", 
+                    ""IsEmailVerified"", ""IsPhoneVerified"", ""EmailVerifiedAt"", ""PhoneVerifiedAt"", 
+                    ""HashPass"", ""CreatedAt"", ""UpdatedAt""
+                ) VALUES (
+                    @Id, @FirstName, @MiddleName, @LastName, @Address, 
+                    @Gender, @PhoneNumber, @DateOfBirth, @Email, @RoleId, 
+                    @IsEmailVerified, @IsPhoneVerified, @EmailVerifiedAt, @PhoneVerifiedAt, 
+                    @HashPass, @CreatedAt, @UpdatedAt
+                )";
+
+            _logger.LogDebug($"Executing explicit Identity insert query: {query}");
+
+            int rowsAffected = await connection.ExecuteAsync(query, data);
+            _logger.LogInformation($"Inserted new Identity record");
+            return rowsAffected > 0;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, $"Error inserting Identity record with explicit SQL");
+            throw;
+        }
+    }
+
     private string GetEnvironmentVariableOrThrow(string name)
     {
         string value = Environment.GetEnvironmentVariable(name);
@@ -404,5 +582,6 @@ public class PostgreService : IPostgreService
             throw new InvalidOperationException($"Environment variable '{name}' is not set or is empty.");
         }
         return value;
+    }
     }
 }
